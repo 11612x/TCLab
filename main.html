@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TC Comparator</title>
+<style>
+  :root {
+    --bg: #0d0f0e;
+    --surface: #141714;
+    --surface2: #1a1d1a;
+    --border: #252825;
+    --border-light: #2e322e;
+    --text: #e8ede8;
+    --text-dim: #b8beb8;
+    --text-muted: #949a94;
+    --accent: #a8b8a8;
+    --accent-dim: #5a6a5a;
+    --accent-glow: rgba(168,184,168,0.07);
+    --red: #b87878;
+    --amber: #b89858;
+    --blue: #7898b8;
+    --purple: #9878b8;
+    --teal: #78b8a8;
+    --colors: #a8b8a8, #7898b8, #b89858, #b87878, #9878b8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 15px;
+    min-height: 100vh;
+    padding: 32px 24px;
+  }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 40px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  header h1 {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  header span {
+    font-size: 13px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  /* LEFT PANEL */
+  .left-panel { display: flex; flex-direction: column; gap: 16px; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 18px;
+  }
+
+  .card-title {
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* TC OPTION ROWS */
+  .tc-options { display: flex; flex-direction: column; gap: 10px; }
+
+  .tc-row {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 12px;
+    position: relative;
+    transition: border-color 0.2s;
+  }
+
+  .tc-row:hover { border-color: var(--border-light); }
+
+  .tc-row-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .tc-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .tc-label-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 14px;
+    font-weight: 500;
+    outline: none;
+    min-width: 0;
+  }
+
+  .tc-label-input::placeholder { color: var(--text-muted); }
+
+  .remove-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 0 2px;
+    transition: color 0.15s;
+  }
+  .remove-btn:hover { color: var(--red); }
+
+  .tc-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+    align-items: end;
+  }
+
+  .field { display: flex; flex-direction: column; gap: 4px; }
+
+  .field label {
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    min-height: 28px;
+    display: flex;
+    align-items: flex-end;
+    line-height: 1.2;
+  }
+
+  .field input, .field select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text);
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 14px;
+    padding: 6px 8px;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.15s;
+  }
+
+  .field input:focus, .field select:focus { border-color: var(--accent-dim); }
+  .field select option { background: var(--surface); }
+
+  .add-tc-btn {
+    background: transparent;
+    border: 1px dashed var(--border-light);
+    border-radius: 5px;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    padding: 10px;
+    text-align: center;
+    transition: all 0.2s;
+    width: 100%;
+  }
+
+  .add-tc-btn:hover {
+    border-color: var(--accent-dim);
+    color: var(--accent);
+    background: var(--accent-glow);
+  }
+
+  /* GLOBAL PARAMS */
+  .params-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  /* SPOT SCENARIOS */
+  .scenario-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+
+  .scenario-label {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .s-bear { color: var(--red); }
+  .s-base { color: var(--amber); }
+  .s-bull { color: var(--accent); }
+
+  /* RUN BUTTON */
+  .run-btn {
+    background: var(--accent);
+    border: none;
+    border-radius: 4px;
+    color: #0d0f0e;
+    cursor: pointer;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    padding: 13px;
+    text-transform: uppercase;
+    width: 100%;
+    transition: opacity 0.15s;
+  }
+  .run-btn:hover { opacity: 0.88; }
+
+  /* RIGHT PANEL */
+  .right-panel { display: flex; flex-direction: column; gap: 20px; }
+
+  .empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 10px;
+    height: 300px;
+    color: var(--text-muted);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+  }
+
+  .empty-state .icon { font-size: 32px; opacity: 0.3; }
+
+  /* RESULTS */
+  .section-title {
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* SUMMARY TABLE */
+  .summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  .summary-table th {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    text-align: right;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 400;
+  }
+
+  .summary-table th:first-child { text-align: left; }
+
+  .summary-table td {
+    padding: 10px 12px;
+    text-align: right;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-dim);
+    vertical-align: middle;
+  }
+
+  .summary-table td:first-child { text-align: left; color: var(--text); }
+
+  .summary-table tr:last-child td { border-bottom: none; }
+
+  .summary-table tr:hover td { background: var(--surface2); }
+
+  .tc-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .best-badge {
+    font-size: 13px;
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid var(--accent-dim);
+    border-radius: 3px;
+    padding: 2px 6px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .val-pos { color: var(--accent); }
+  .val-neg { color: var(--red); }
+  .val-neu { color: var(--amber); }
+
+  /* SCENARIO MATRIX */
+  .matrix-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  .matrix-table th {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 400;
+    text-align: center;
+  }
+
+  .matrix-table th:first-child { text-align: left; }
+
+  .matrix-table td {
+    padding: 10px 10px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+    vertical-align: middle;
+  }
+
+  .matrix-table td:first-child { text-align: left; color: var(--text); font-size: 14px; }
+  .matrix-table tr:last-child td { border-bottom: none; }
+
+  .scenario-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .scenario-cell .main { font-size: 14px; }
+  .scenario-cell .delta { font-size: 12px; color: var(--text-muted); }
+
+  /* BREAKEVEN */
+  .breakeven-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+  }
+
+  .breakeven-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 16px;
+  }
+
+  .breakeven-card .pair {
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+
+  .breakeven-card .rate {
+    font-size: 22px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    color: var(--text);
+  }
+
+  .breakeven-card .rate span { font-size: 14px; font-family: 'Consolas', 'Courier New', monospace; color: var(--text-dim); }
+
+  .breakeven-card .context { font-size: 12px; color: var(--text-dim); margin-top: 6px; line-height: 1.5; }
+
+  /* NPV CHART */
+  .chart-container { position: relative; }
+
+  canvas { border-radius: 4px; }
+
+  /* BEST SUMMARY */
+  .verdict-box {
+    background: var(--accent-glow);
+    border: 1px solid var(--accent-dim);
+    border-radius: 5px;
+    padding: 16px 18px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .verdict-box .v-icon { font-size: 22px; flex-shrink: 0; margin-top: 1px; }
+
+  .verdict-box .v-text { flex: 1; }
+
+  .verdict-box .v-title {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+
+  .verdict-box .v-body { font-size: 14px; color: var(--text-dim); line-height: 1.7; }
+
+  .verdict-box .v-body strong { color: var(--text); font-weight: 500; }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>TC Comparator</h1>
+  <span>Time Charter Analysis Tool</span>
+</header>
+
+<div class="layout">
+  <!-- LEFT -->
+  <div class="left-panel">
+
+    <div class="card">
+      <div class="card-title">TC Options</div>
+      <div class="tc-options" id="tcOptions"></div>
+      <button class="add-tc-btn" onclick="addTC()" style="margin-top:10px">+ Add Option</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Global Parameters</div>
+      <div class="params-grid">
+        <div class="field">
+          <label>Discount Rate %/yr</label>
+          <input type="number" id="discountRate" value="8" min="0" max="30" step="0.5">
+        </div>
+        <div class="field">
+          <label>Vessel Type</label>
+          <select id="vesselType">
+            <option value="MR Tanker">MR Tanker</option>
+            <option value="LR1">LR1</option>
+            <option value="LR2">LR2</option>
+            <option value="VLCC">VLCC</option>
+            <option value="Aframax">Aframax</option>
+            <option value="Suezmax">Suezmax</option>
+            <option value="Capesize">Capesize</option>
+            <option value="Panamax">Panamax</option>
+            <option value="Supramax">Supramax</option>
+            <option value="Handysize">Handysize</option>
+            <option value="Custom">Custom</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Spot Rate Scenarios</div>
+      <div style="margin-bottom:8px; font-size:13px; color:var(--text-muted)">Average TCE expected when open/spot</div>
+      <div class="scenario-grid">
+        <div>
+          <div class="scenario-label s-bear">Bear</div>
+          <div class="field">
+            <input type="number" id="spotBear" value="14000" step="500">
+          </div>
+        </div>
+        <div>
+          <div class="scenario-label s-base">Base</div>
+          <div class="field">
+            <input type="number" id="spotBase" value="22000" step="500">
+          </div>
+        </div>
+        <div>
+          <div class="scenario-label s-bull">Bull</div>
+          <div class="field">
+            <input type="number" id="spotBull" value="35000" step="500">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="run-btn" onclick="runAnalysis()">▶ Run Analysis</button>
+
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right-panel" id="results">
+    <div class="empty-state">
+      <div class="icon">⚓</div>
+      <div>Add TC options and run analysis</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────────
+const COLORS = ['#a8b8a8','#7898b8','#b89858','#b87878','#9878b8'];
+let tcOptions = [];
+let tcId = 0;
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+window.onload = () => {
+  addTC({ label:'1Y TC @ 30k', rate:30000, duration:1 });
+  addTC({ label:'3Y TC @ 21k', rate:21000, duration:3 });
+};
+
+// ─── ADD / REMOVE TC ─────────────────────────────────────────────────────────
+function addTC(defaults = {}) {
+  if (tcOptions.length >= 5) return alert('Max 5 options');
+  const id = ++tcId;
+  const color = COLORS[tcOptions.length % COLORS.length];
+  const opt = { id, color, label: defaults.label || `Option ${id}`, rate: defaults.rate || 25000, duration: defaults.duration || 1, startDelay: 0 };
+  tcOptions.push(opt);
+  renderTCList();
+}
+
+function removeTC(id) {
+  tcOptions = tcOptions.filter(t => t.id !== id);
+  // recolor
+  tcOptions.forEach((t, i) => t.color = COLORS[i % COLORS.length]);
+  renderTCList();
+}
+
+function renderTCList() {
+  const container = document.getElementById('tcOptions');
+  container.innerHTML = '';
+  tcOptions.forEach(opt => {
+    const row = document.createElement('div');
+    row.className = 'tc-row';
+    row.id = `tc-row-${opt.id}`;
+    row.innerHTML = `
+      <div class="tc-row-header">
+        <div class="tc-dot" style="background:${opt.color}"></div>
+        <input class="tc-label-input" placeholder="Label" value="${opt.label}" oninput="updateTC(${opt.id},'label',this.value)">
+        <button class="remove-btn" onclick="removeTC(${opt.id})">×</button>
+      </div>
+      <div class="tc-inputs">
+        <div class="field">
+          <label>Rate $/day</label>
+          <input type="number" value="${opt.rate}" step="500" oninput="updateTC(${opt.id},'rate',+this.value)">
+        </div>
+        <div class="field">
+          <label>Duration yrs</label>
+          <input type="number" value="${opt.duration}" step="0.25" min="0.25" max="10" oninput="updateTC(${opt.id},'duration',+this.value)">
+        </div>
+        <div class="field">
+          <label>Delay (days)</label>
+          <input type="number" value="${opt.startDelay}" step="1" min="0" oninput="updateTC(${opt.id},'startDelay',+this.value)">
+        </div>
+      </div>
+    `;
+    container.appendChild(row);
+  });
+}
+
+function updateTC(id, field, val) {
+  const opt = tcOptions.find(t => t.id === id);
+  if (opt) opt[field] = val;
+}
+
+// ─── MATH ────────────────────────────────────────────────────────────────────
+function npv(rate_day, duration_years, discount_rate_annual, delay_days) {
+  const daily_discount = Math.pow(1 + discount_rate_annual / 100, 1 / 365) - 1;
+  const days = duration_years * 365;
+  let pv = 0;
+  for (let d = 0; d < days; d++) {
+    pv += rate_day / Math.pow(1 + daily_discount, d + delay_days);
+  }
+  return pv;
+}
+
+function totalEarnings(rate_day, duration_years) {
+  return rate_day * duration_years * 365;
+}
+
+function annualEquivalentNPV(pv, duration_years, discount_rate_annual) {
+  // Capital recovery factor
+  const r = discount_rate_annual / 100;
+  if (r === 0) return pv / (duration_years);
+  const n = duration_years;
+  const crf = (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+  return pv * crf;
+}
+
+// For scenario: TC earns TC rate for duration, then spot for remainder up to max duration
+function scenarioValue(tcRate, tcDuration, spotRate, horizon, discount_rate) {
+  const daily_discount = Math.pow(1 + discount_rate / 100, 1 / 365) - 1;
+  const totalDays = horizon * 365;
+  const tcDays = tcDuration * 365;
+  let pv = 0;
+  for (let d = 0; d < totalDays; d++) {
+    const r = d < tcDays ? tcRate : spotRate;
+    pv += r / Math.pow(1 + daily_discount, d);
+  }
+  return pv;
+}
+
+// Breakeven spot: what average spot makes optA === optB over a common horizon?
+function breakeven(a, b, horizon, discount_rate) {
+  // NPV(a.rate, a.duration) + NPV(spot, horizon-a.duration) = NPV(b.rate, b.duration) + NPV(spot, horizon-b.duration)
+  // Solve for spot analytically: collect spot terms
+  const dr = Math.pow(1 + discount_rate / 100, 1 / 365) - 1;
+  const hDays = Math.round(horizon * 365);
+  const aDays = Math.min(Math.round(a.duration * 365), hDays);
+  const bDays = Math.min(Math.round(b.duration * 365), hDays);
+
+  // Fixed parts (TC earnings)
+  let fixedA = 0, fixedB = 0;
+  for (let d = 0; d < aDays; d++) fixedA += a.rate / Math.pow(1 + dr, d);
+  for (let d = 0; d < bDays; d++) fixedB += b.rate / Math.pow(1 + dr, d);
+
+  // Spot multipliers (sum of discount factors after TC ends)
+  let multA = 0, multB = 0;
+  for (let d = aDays; d < hDays; d++) multA += 1 / Math.pow(1 + dr, d);
+  for (let d = bDays; d < hDays; d++) multB += 1 / Math.pow(1 + dr, d);
+
+  // fixedA + spot*multA = fixedB + spot*multB
+  // spot*(multA - multB) = fixedB - fixedA
+  const denom = multA - multB;
+  if (Math.abs(denom) < 0.01) return null; // same duration, no cross
+  return (fixedB - fixedA) / denom;
+}
+
+// ─── RUN ANALYSIS ────────────────────────────────────────────────────────────
+function runAnalysis() {
+  if (tcOptions.length < 1) return alert('Add at least one TC option');
+
+  const disc = parseFloat(document.getElementById('discountRate').value);
+  const spotBear = parseFloat(document.getElementById('spotBear').value);
+  const spotBase = parseFloat(document.getElementById('spotBase').value);
+  const spotBull = parseFloat(document.getElementById('spotBull').value);
+
+  const maxDuration = Math.max(...tcOptions.map(t => t.duration));
+  const horizon = maxDuration; // common horizon = longest leg
+
+  // Compute metrics for each option
+  const results = tcOptions.map(opt => {
+    const total = totalEarnings(opt.rate, opt.duration);
+    const pv = npv(opt.rate, opt.duration, disc, opt.startDelay || 0);
+    const aer = annualEquivalentNPV(pv, opt.duration, disc);
+
+    const scenBear = scenarioValue(opt.rate, opt.duration, spotBear, horizon, disc);
+    const scenBase = scenarioValue(opt.rate, opt.duration, spotBase, horizon, disc);
+    const scenBull = scenarioValue(opt.rate, opt.duration, spotBull, horizon, disc);
+
+    return { ...opt, total, pv, aer, scenBear, scenBase, scenBull };
+  });
+
+  // Best by each metric
+  const bestTotal = results.reduce((a, b) => a.total > b.total ? a : b).id;
+  const bestPV = results.reduce((a, b) => a.pv > b.pv ? a : b).id;
+  const bestBase = results.reduce((a, b) => a.scenBase > b.scenBase ? a : b).id;
+
+  // Breakeven pairs (all combinations)
+  const pairs = [];
+  for (let i = 0; i < results.length; i++) {
+    for (let j = i + 1; j < results.length; j++) {
+      const bep = breakeven(results[i], results[j], horizon, disc);
+      pairs.push({ a: results[i], b: results[j], bep });
+    }
+  }
+
+  renderResults(results, pairs, { bestTotal, bestPV, bestBase, horizon, disc, spotBear, spotBase, spotBull });
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function fmt(n) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  if (Math.abs(n) >= 1e6) return '$' + (n / 1e6).toFixed(2) + 'M';
+  return '$' + n.toLocaleString('en-US', {maximumFractionDigits: 0});
+}
+
+function fmtDay(n) {
+  if (!n || isNaN(n)) return '—';
+  return '$' + n.toLocaleString('en-US', {maximumFractionDigits:0}) + '/d';
+}
+
+function colorClass(val, refVal) {
+  if (val === refVal) return 'val-pos';
+  if (val > refVal) return 'val-pos';
+  return 'val-neg';
+}
+
+function renderResults(results, pairs, meta) {
+  const container = document.getElementById('results');
+  container.innerHTML = '';
+
+  // ── VERDICT ──
+  const bestOverall = results.reduce((a, b) => a.scenBase > b.scenBase ? a : b);
+  const verdictEl = document.createElement('div');
+  verdictEl.innerHTML = `
+    <div class="verdict-box">
+      <div class="v-icon">◈</div>
+      <div class="v-text">
+        <div class="v-title">Base Case Winner</div>
+        <div class="v-body">
+          <strong style="color:${bestOverall.color}">${bestOverall.label}</strong> (${bestOverall.duration}Y @ ${fmtDay(bestOverall.rate)}) generates the highest NPV over a
+          <strong>${meta.horizon.toFixed(2)}Y</strong> horizon in the base spot scenario.
+          Total undiscounted earnings: <strong>${fmt(bestOverall.total)}</strong> &mdash;
+          PV of TC cashflows: <strong>${fmt(bestOverall.pv)}</strong>.
+        </div>
+      </div>
+    </div>
+  `;
+  container.appendChild(verdictEl);
+
+  // ── SUMMARY TABLE ──
+  const summaryWrap = document.createElement('div');
+  summaryWrap.className = 'card';
+  let tableHTML = `
+    <div class="section-title">Summary Metrics</div>
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>Option</th>
+          <th>Rate</th>
+          <th>Duration</th>
+          <th>Total Gross</th>
+          <th>PV (TC only)</th>
+          <th>Ann. Equiv.</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  results.forEach(r => {
+    const isBestPV = r.id === meta.bestPV;
+    tableHTML += `
+      <tr>
+        <td>
+          <div class="tc-name-cell">
+            <div class="tc-dot" style="background:${r.color}"></div>
+            ${r.label}
+            ${isBestPV ? '<span class="best-badge">Best NPV</span>' : ''}
+          </div>
+        </td>
+        <td>${fmtDay(r.rate)}</td>
+        <td>${r.duration}Y</td>
+        <td class="${r.id === meta.bestTotal ? 'val-pos' : 'val-neu'}">${fmt(r.total)}</td>
+        <td class="${isBestPV ? 'val-pos' : ''}">${fmt(r.pv)}</td>
+        <td>${fmtDay(r.aer)}</td>
+      </tr>
+    `;
+  });
+
+  tableHTML += `</tbody></table>`;
+  summaryWrap.innerHTML = tableHTML;
+  container.appendChild(summaryWrap);
+
+  // ── SCENARIO MATRIX ──
+  const matWrap = document.createElement('div');
+  matWrap.className = 'card';
+
+  const bestBear = results.reduce((a, b) => a.scenBear > b.scenBear ? a : b).id;
+  const bestBase2 = results.reduce((a, b) => a.scenBase > b.scenBase ? a : b).id;
+  const bestBull = results.reduce((a, b) => a.scenBull > b.scenBull ? a : b).id;
+
+  let matHTML = `
+    <div class="section-title">Scenario Matrix — PV over ${meta.horizon.toFixed(2)}Y Horizon</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px">TC earnings at fixed rate, remainder at scenario spot. Spot assumed: Bear ${fmtDay(parseFloat(document.getElementById('spotBear').value))} / Base ${fmtDay(parseFloat(document.getElementById('spotBase').value))} / Bull ${fmtDay(parseFloat(document.getElementById('spotBull').value))}</div>
+    <table class="matrix-table">
+      <thead>
+        <tr>
+          <th>Option</th>
+          <th style="color:var(--red)">Bear</th>
+          <th style="color:var(--amber)">Base</th>
+          <th style="color:var(--accent)">Bull</th>
+          <th>Score</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  results.forEach(r => {
+    const score = (r.id === bestBear ? 1 : 0) + (r.id === bestBase2 ? 1 : 0) + (r.id === bestBull ? 1 : 0);
+    const scoreColor = score === 3 ? 'val-pos' : score === 2 ? 'val-pos' : score === 1 ? 'val-neu' : '';
+    matHTML += `
+      <tr>
+        <td><div class="tc-name-cell"><div class="tc-dot" style="background:${r.color}"></div>${r.label}</div></td>
+        <td class="${r.id === bestBear ? 'val-pos' : ''}"><div class="scenario-cell"><div class="main">${fmt(r.scenBear)}</div></div></td>
+        <td class="${r.id === bestBase2 ? 'val-pos' : ''}"><div class="scenario-cell"><div class="main">${fmt(r.scenBase)}</div></div></td>
+        <td class="${r.id === bestBull ? 'val-pos' : ''}"><div class="scenario-cell"><div class="main">${fmt(r.scenBull)}</div></div></td>
+        <td class="${scoreColor}">${score}/3</td>
+      </tr>
+    `;
+  });
+
+  matHTML += `</tbody></table>`;
+  matWrap.innerHTML = matHTML;
+  container.appendChild(matWrap);
+
+  // ── BREAKEVEN ──
+  if (pairs.length > 0) {
+    const bepWrap = document.createElement('div');
+    bepWrap.className = 'card';
+    let bepHTML = `
+      <div class="section-title">Break-Even Spot Rates</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">The average spot rate at which each pair becomes equivalent in NPV over the common horizon. Below break-even → longer/lower TC wins. Above → shorter/higher TC wins.</div>
+      <div class="breakeven-grid">
+    `;
+
+    pairs.forEach(p => {
+      if (p.bep === null) {
+        bepHTML += `
+          <div class="breakeven-card">
+            <div class="pair">${p.a.label} vs ${p.b.label}</div>
+            <div class="rate" style="font-size:14px;color:var(--text-muted)">Same duration</div>
+            <div class="context">No break-even — compare by rate directly</div>
+          </div>
+        `;
+        return;
+      }
+
+      const bepFmt = p.bep < 0 ? 'N/A (always prefer higher rate)' : fmtDay(p.bep);
+      const spotBase = parseFloat(document.getElementById('spotBase').value);
+      let verdict = '';
+      if (p.bep < 0) {
+        verdict = `Higher-rate option dominates`;
+      } else if (spotBase > p.bep) {
+        verdict = `Base spot above BE → <span style="color:${p.a.color}">${p.a.label}</span> preferred`;
+      } else {
+        verdict = `Base spot below BE → <span style="color:${p.b.color}">${p.b.label}</span> preferred`;
+      }
+
+      bepHTML += `
+        <div class="breakeven-card">
+          <div class="pair">${p.a.label} vs ${p.b.label}</div>
+          <div class="rate">${p.bep < 0 ? '—' : fmtDay(p.bep)}</div>
+          <div class="context">${verdict}</div>
+        </div>
+      `;
+    });
+
+    bepHTML += `</div>`;
+    bepWrap.innerHTML = bepHTML;
+    container.appendChild(bepWrap);
+  }
+
+  // ── NPV SENSITIVITY CHART ──
+  const chartWrap = document.createElement('div');
+  chartWrap.className = 'card';
+  chartWrap.innerHTML = `<div class="section-title">NPV Sensitivity to Spot Rate (After TC Expiry)</div><canvas id="sensitivityChart" height="220"></canvas>`;
+  container.appendChild(chartWrap);
+
+  requestAnimationFrame(() => drawChart(results, meta));
+}
+
+function drawChart(results, meta) {
+  const canvas = document.getElementById('sensitivityChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.parentElement.clientWidth - 36;
+  const H = 220;
+  canvas.width = W;
+  canvas.height = H;
+
+  const PAD = { top: 16, right: 20, bottom: 36, left: 72 };
+  const cW = W - PAD.left - PAD.right;
+  const cH = H - PAD.top - PAD.bottom;
+
+  // Spot range: 5k to 60k
+  const spotMin = 5000, spotMax = 60000;
+  const steps = 80;
+  const spotRange = Array.from({length: steps}, (_, i) => spotMin + (spotMax - spotMin) * i / (steps - 1));
+
+  const series = results.map(r => ({
+    color: r.color,
+    label: r.label,
+    values: spotRange.map(s => scenarioValue(r.rate, r.duration, s, meta.horizon, meta.disc))
+  }));
+
+  const allVals = series.flatMap(s => s.values);
+  const minV = Math.min(...allVals);
+  const maxV = Math.max(...allVals);
+  const vRange = maxV - minV || 1;
+
+  const xMap = s => PAD.left + ((s - spotMin) / (spotMax - spotMin)) * cW;
+  const yMap = v => PAD.top + (1 - (v - minV) / vRange) * cH;
+
+  // Grid
+  ctx.strokeStyle = '#252825';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = PAD.top + (i / 4) * cH;
+    ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left + cW, y); ctx.stroke();
+    const val = maxV - (vRange * i / 4);
+    ctx.fillStyle = '#4a504a';
+    ctx.font = '13px Consolas, monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(fmt(val), PAD.left - 6, y + 4);
+  }
+
+  // X axis labels
+  [10000, 20000, 30000, 40000, 50000].forEach(s => {
+    const x = xMap(s);
+    ctx.fillStyle = '#4a504a';
+    ctx.font = '13px Consolas, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('$' + (s/1000) + 'k', x, H - PAD.bottom + 14);
+  });
+
+  // Spot scenario lines
+  const scenarios = [
+    { val: parseFloat(document.getElementById('spotBear').value), color: '#b87878', label: 'Bear' },
+    { val: parseFloat(document.getElementById('spotBase').value), color: '#b89858', label: 'Base' },
+    { val: parseFloat(document.getElementById('spotBull').value), color: '#a8b8a8', label: 'Bull' },
+  ];
+
+  scenarios.forEach(sc => {
+    const x = xMap(sc.val);
+    ctx.setLineDash([3, 4]);
+    ctx.strokeStyle = sc.color + '55';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x, PAD.top); ctx.lineTo(x, PAD.top + cH); ctx.stroke();
+    ctx.setLineDash([]);
+  });
+
+  // Series lines
+  series.forEach(s => {
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth = 2;
+    ctx.shadowColor = s.color;
+    ctx.shadowBlur = 4;
+    ctx.beginPath();
+    spotRange.forEach((sp, i) => {
+      const x = xMap(sp);
+      const y = yMap(s.values[i]);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  });
+
+  // X axis label
+  ctx.fillStyle = '#4a504a';
+  ctx.font = '13px Consolas, monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('Average Spot Rate ($/day) After TC Expiry', PAD.left + cW / 2, H - 4);
+
+  // Legend
+  let lx = PAD.left;
+  series.forEach(s => {
+    ctx.fillStyle = s.color;
+    ctx.fillRect(lx, 4, 14, 3);
+    ctx.fillStyle = '#7a807a';
+    ctx.font = '13px Consolas, monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(s.label, lx + 18, 11);
+    lx += ctx.measureText(s.label).width + 34;
+  });
+}
+
+// Init
+renderTCList();
+</script>
+</body>
+</html>
