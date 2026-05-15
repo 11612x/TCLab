@@ -202,6 +202,7 @@
     align-items: center;
     gap: 8px;
     margin-bottom: 10px;
+    position: relative;
   }
 
   .tc-dot {
@@ -239,9 +240,25 @@
 
   .tc-inputs {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 6px;
     align-items: end;
+  }
+
+  .tc-ym-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+  }
+
+  .tc-ym-row input {
+    min-width: 0;
+    font-size: calc(14px * 0.75);
+  }
+
+  .tc-ym-row input::placeholder {
+    color: var(--text-dim);
+    opacity: 0.85;
   }
 
   .field { display: flex; flex-direction: column; gap: 4px; }
@@ -312,6 +329,73 @@
     width: 100%;
   }
 
+  #tab-tc .spot-actions-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  #tab-tc .spot-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 46px;
+    gap: 8px;
+    align-items: center;
+  }
+
+  #tab-tc .spot-actions .run-btn {
+    width: 100%;
+    min-width: 0;
+  }
+
+  #tab-tc .spot-reset-btn {
+    align-items: center;
+    background: transparent;
+    border: 1px solid var(--border-light);
+    border-radius: 4px;
+    box-sizing: border-box;
+    color: var(--text-dim);
+    cursor: pointer;
+    display: flex;
+    flex-shrink: 0;
+    height: 46px;
+    justify-content: center;
+    line-height: 1;
+    padding: 0;
+    transition: opacity 0.15s, border-color 0.15s, color 0.15s;
+    width: 46px;
+  }
+
+  #tab-tc .spot-reset-btn svg {
+    display: block;
+    height: 18px;
+    width: 18px;
+  }
+
+  #tab-tc .spot-reset-btn:hover {
+    opacity: 0.88;
+    border-color: var(--accent-dim);
+    color: var(--text);
+  }
+
+  #tab-tc .tc-row-header .remove-btn {
+    position: static;
+    flex-shrink: 0;
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25em;
+    height: 1.25em;
+    font-size: 14px;
+    line-height: 1.25;
+    padding: 0;
+    margin: 0;
+  }
+
+  #tab-tc .tc-label-input {
+    line-height: 1.25;
+  }
+
   .add-tc-btn {
     background: transparent;
     border: 1px dashed var(--border-light);
@@ -331,6 +415,68 @@
     border-color: var(--accent-dim);
     color: var(--accent);
     background: var(--accent-glow);
+  }
+
+  .tc-add-btns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .tc-add-btns .add-tc-btn {
+    margin-top: 0;
+  }
+
+  .add-tc-btn--spot:hover {
+    border-color: var(--amber);
+    color: var(--amber);
+    background: color-mix(in srgb, var(--amber) 12%, transparent);
+  }
+
+  .tc-row--spot {
+    border-color: color-mix(in srgb, var(--amber) 35%, var(--border));
+  }
+
+  .tc-row--spot .tc-inputs {
+    align-items: flex-start;
+  }
+
+  .tc-row--spot .field label {
+    align-items: flex-start;
+    min-height: 0;
+  }
+
+  .tc-spot-value {
+    color: var(--text);
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+    padding: 4px 0;
+  }
+
+  .tc-spot-rates-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    line-height: 1.35;
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  .tc-spot-rates-stack .bear { color: var(--red); }
+  .tc-spot-rates-stack .base { color: var(--amber); }
+  .tc-spot-rates-stack .bull { color: var(--accent); }
+
+  .tc-spot-fixed-label {
+    color: var(--text);
+    flex: 1;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    min-width: 0;
+    text-transform: uppercase;
   }
 
   /* GLOBAL PARAMS */
@@ -814,7 +960,10 @@
   .chain-export-surface .bear,
   .chain-export-surface .base,
   .chain-export-surface .bull,
-  .chain-export-surface .scenario-trio span {
+  .chain-export-surface .scenario-trio span,
+  .chain-export-surface .scenario-trio-cell .bear,
+  .chain-export-surface .scenario-trio-cell .base,
+  .chain-export-surface .scenario-trio-cell .bull {
     color: #000 !important;
   }
 
@@ -2652,7 +2801,7 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--text-muted);
-    text-align: right;
+    text-align: center;
     padding: 8px 12px;
     border-bottom: 1px solid var(--border);
     font-weight: 400;
@@ -2662,13 +2811,24 @@
 
   .summary-table td {
     padding: 10px 12px;
-    text-align: right;
+    text-align: center;
     border-bottom: 1px solid var(--border);
     color: var(--text-dim);
     vertical-align: middle;
   }
 
   .summary-table td:first-child { text-align: left; color: var(--text); }
+
+  .summary-table .tc-name-cell {
+    justify-content: flex-start;
+  }
+
+  .summary-spot-base-note {
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.35;
+    margin-top: 4px;
+  }
 
   .summary-table tr:last-child td { border-bottom: none; }
 
@@ -2735,6 +2895,17 @@
 
   .scenario-cell .main { font-size: 14px; }
   .scenario-cell .delta { font-size: 12px; color: var(--text-muted); }
+
+  .scenario-trio-cell {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    text-align: left;
+  }
+
+  .scenario-trio-cell .bear { color: var(--red); }
+  .scenario-trio-cell .base { color: var(--amber); }
+  .scenario-trio-cell .bull { color: var(--accent); }
 
   /* BREAKEVEN */
   .breakeven-grid {
@@ -4093,7 +4264,10 @@
       <div class="card">
         <div class="card-title">TC ARCS</div>
         <div class="tc-options" id="tcOptions"></div>
-        <button class="add-tc-btn" onclick="addTC()" style="margin-top:10px">+ Add Arc</button>
+        <div class="tc-add-btns">
+          <button type="button" class="add-tc-btn" onclick="addTC()">+ Add Arc</button>
+          <button type="button" class="add-tc-btn add-tc-btn--spot" onclick="addSpotArc()">+ Add Spot</button>
+        </div>
       </div>
 
       <div class="card">
@@ -4147,7 +4321,12 @@
         </div>
       </div>
 
-      <button class="run-btn" onclick="runAnalysis()">Run Analysis</button>
+      <div class="spot-actions-wrap">
+        <div class="spot-actions">
+          <button class="run-btn" type="button" onclick="runAnalysis()">Run Analysis</button>
+          <button class="spot-reset-btn" type="button" onclick="resetTcAnalysis()" aria-label="Reset" title="Reset"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-hidden="true"><path fill="#a8b8a8" d="M8.884 3.116a1.25 1.25 0 0 1 0 1.768L6.018 7.75H17.5c5.937 0 10.75 4.813 10.75 10.75S23.437 29.25 17.5 29.25S6.75 24.437 6.75 18.5a1.25 1.25 0 1 1 2.5 0a8.25 8.25 0 1 0 8.25-8.25H6.018l2.866 2.866a1.25 1.25 0 0 1-1.768 1.768l-5-5a1.25 1.25 0 0 1 0-1.768l5-5a1.25 1.25 0 0 1 1.768 0"/></svg></button>
+        </div>
+      </div>
     </div>
 
     <div class="right-panel" id="results">
@@ -4250,7 +4429,7 @@
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 <div class="tab-panel" id="tab-estimate">
   <div class="empty-state">
-    <div>Estimate — content next</div>
+    <div>Estimate — Coming soon</div>
   </div>
 </div>
 
@@ -4602,6 +4781,7 @@ async function loadTCOptions() {
   if (!v || typeof v !== 'object' || !Array.isArray(v.tcOptions)) return;
   tcOptions = v.tcOptions;
   tcId = Number(v.tcId) || 0;
+  tcOptions.forEach(tcNormalizeOption);
   const tcVesselEl = document.getElementById('tcVesselName');
   if (tcVesselEl) tcVesselEl.value = v.tcVesselName != null ? String(v.tcVesselName) : '';
   renderTCList();
@@ -4731,7 +4911,6 @@ function authUpdateThemeMenuButtons() {
 function authSyncThemeFromStorage() {
   authApplyThemeToDom(authReadStoredTheme());
   authUpdateThemeMenuButtons();
-  refreshChartsAfterThemeChange();
 }
 
 function authSetUserTheme(theme) {
@@ -4739,7 +4918,6 @@ function authSetUserTheme(theme) {
   authApplyThemeToDom(t);
   authPersistTheme(t);
   authUpdateThemeMenuButtons();
-  refreshChartsAfterThemeChange();
 }
 
 function authCloseUserMenu() {
@@ -6846,14 +7024,297 @@ window.onload = async () => {
   wirePortAutocompleteForApp();
 };
 
+function tcDurationYearsTotal(opt) {
+  if (!opt) return 0;
+  const y = Number(opt.durationYears);
+  const m = Number(opt.durationMonths);
+  if (Number.isFinite(y) || Number.isFinite(m)) {
+    return Math.max(0, (Number.isFinite(y) ? y : 0) + (Number.isFinite(m) ? m : 0) / 12);
+  }
+  const leg = Number(opt.duration);
+  return Number.isFinite(leg) && leg > 0 ? leg : 0;
+}
+
+function tcMaxTcArcDurationYears() {
+  let max = 0;
+  for (const o of tcOptions) {
+    if (tcIsSpotArc(o)) continue;
+    max = Math.max(max, tcDurationYearsTotal(o));
+  }
+  return max;
+}
+
+function tcYearsToYm(totalYears) {
+  const total = Math.max(0, Number(totalYears) || 0);
+  if (total <= 0) return { durationYears: null, durationMonths: null };
+  let dy = Math.floor(total);
+  let dm = Math.round((total - dy) * 12);
+  if (dm >= 12) {
+    dy += Math.floor(dm / 12);
+    dm = dm % 12;
+  }
+  return { durationYears: dy || null, durationMonths: dm || null };
+}
+
+function tcLongestTcArcOption() {
+  let best = null;
+  let max = 0;
+  for (const o of tcOptions) {
+    if (tcIsSpotArc(o)) continue;
+    const d = tcDurationYearsTotal(o);
+    if (d > max) {
+      max = d;
+      best = o;
+    }
+  }
+  return best;
+}
+
+function tcHasSpotArc() {
+  return tcOptions.some(tcIsSpotArc);
+}
+
+function tcEffectiveDurationYears(opt) {
+  if (tcIsSpotArc(opt)) return tcMaxTcArcDurationYears();
+  return tcDurationYearsTotal(opt);
+}
+
+function tcNormalizeOption(opt) {
+  if (!opt || typeof opt !== 'object') return;
+  if (opt.durationYears == null && opt.durationMonths == null && opt.duration != null) {
+    const total = Math.max(0, Number(opt.duration) || 0);
+    if (total > 0) {
+      let dy = Math.floor(total);
+      let dm = Math.round((total - dy) * 12);
+      if (dm >= 12) {
+        dy += Math.floor(dm / 12);
+        dm = dm % 12;
+      }
+      opt.durationYears = dy;
+      opt.durationMonths = dm;
+    }
+  }
+
+  if (!opt.arcType) opt.arcType = 'tc';
+  if (tcIsSpotArc(opt)) opt.label = 'SPOT';
+
+  opt.duration = tcEffectiveDurationYears(opt);
+  opt.startDelay = 0;
+}
+
+function tcFmtYm(years, months) {
+  const y = Math.max(0, Math.floor(Number(years) || 0));
+  const m = Math.max(0, Math.round(Number(months) || 0));
+  if (y && m) return `${y}Y ${m}M`;
+  if (y) return `${y}Y`;
+  if (m) return `${m}M`;
+  return '0';
+}
+
+function tcFmtDuration(opt) {
+  if (!opt) return '—';
+  if (tcIsSpotArc(opt)) {
+    const ref = tcLongestTcArcOption();
+    return ref ? tcFmtDuration(ref) : '—';
+  }
+  const y = Number(opt.durationYears);
+  const m = Number(opt.durationMonths);
+  const hasY = Number.isFinite(y) && y > 0;
+  const hasM = Number.isFinite(m) && m > 0;
+  if (!hasY && !hasM) return '—';
+  return tcFmtYm(hasY ? y : 0, hasM ? m : 0);
+}
+
+function tcFmtDurationYearsAs(opt, totalYears) {
+  const total = Math.max(0, Number(totalYears) || 0);
+  if (total <= 0) return '0';
+  const y = Number(opt.durationYears);
+  const m = Number(opt.durationMonths);
+  const hasY = Number.isFinite(y) && y > 0;
+  const hasM = Number.isFinite(m) && m > 0;
+  if (hasM && !hasY) {
+    const months = Math.round(total * 12);
+    return months > 0 ? `${months}M` : '0';
+  }
+  if (hasY && !hasM) {
+    if (Math.abs(total - Math.round(total)) < 0.01) return `${Math.round(total)}Y`;
+    return `${Math.round(total * 10) / 10}Y`;
+  }
+  const ym = tcYearsToYm(total);
+  return tcFmtYm(ym.durationYears, ym.durationMonths);
+}
+
+function tcArcHasBaseSpotTail(opt, horizonYears) {
+  if (!opt || tcIsSpotArc(opt)) return false;
+  const tcY = tcDurationYearsTotal(opt);
+  const hY = Math.max(0, Number(horizonYears) || 0);
+  return hY - tcY >= 1 / 365;
+}
+
+function tcFmtDurationTcPlusSpot(opt, horizonYears) {
+  const tcY = tcDurationYearsTotal(opt);
+  const hY = Math.max(0, Number(horizonYears) || 0);
+  const spotY = Math.max(0, hY - tcY);
+  const tcPart = tcFmtDuration(opt);
+  if (spotY < 1 / 365) return tcPart;
+  const spotPart = tcFmtDurationYearsAs(opt, spotY);
+  return `${tcPart} + ${spotPart}`;
+}
+
+function tcFmtSummaryRateCell(r, meta) {
+  if (tcIsSpotArc(r)) return fmtDay(r.rate);
+  if (tcArcHasBaseSpotTail(r, meta.horizon)) {
+    return `${fmtDay(r.rate)}<div class="summary-spot-base-note">Base spot: ${fmtDay(meta.spotBase)}</div>`;
+  }
+  return fmtDay(r.rate);
+}
+
+function getTcSpotScenarioRates() {
+  return {
+    spotBear: parseNum(document.getElementById('spotBear')?.value),
+    spotBase: parseNum(document.getElementById('spotBase')?.value),
+    spotBull: parseNum(document.getElementById('spotBull')?.value),
+  };
+}
+
+function tcFmtSpotRatesPlain(meta) {
+  const m = meta || getTcSpotScenarioRates();
+  return `Bear: ${fmtDay(m.spotBear)} · Base: ${fmtDay(m.spotBase)} · Bull: ${fmtDay(m.spotBull)}`;
+}
+
+function tcFmtSpotRatesStackHtml(meta) {
+  const m = meta || getTcSpotScenarioRates();
+  return `<div class="tc-spot-rates-stack">
+    <span class="bear">Bear: ${fmtDay(m.spotBear)}</span>
+    <span class="base">Base: ${fmtDay(m.spotBase)}</span>
+    <span class="bull">Bull: ${fmtDay(m.spotBull)}</span>
+  </div>`;
+}
+
+function tcIsSpotArc(opt) {
+  return String(opt?.arcType ?? '').toLowerCase() === 'spot';
+}
+
+function tcFmtRateDisplay(r) {
+  return fmtDay(r.rate);
+}
+
+function tcSpotSummaryRowsHtml(r, meta) {
+  const ref = tcLongestTcArcOption();
+  const dur = ref ? tcFmtDurationYearsAs(ref, meta.horizon) : '—';
+  const scenarios = [
+    { label: 'Bear', rate: r.spotBear, total: r.totalBear, aer: r.aerBear },
+    { label: 'Base', rate: r.spotBase, total: r.total, aer: r.aer },
+    { label: 'Bull', rate: r.spotBull, total: r.totalBull, aer: r.aerBull },
+  ];
+  return scenarios.map(s => `
+    <tr>
+      <td><div class="tc-name-cell"><div class="tc-dot" style="background:${r.color}"></div>SPOT (${s.label})</div></td>
+      <td>${fmtDay(s.rate)}</td>
+      <td>${dur}</td>
+      <td class="${s.label === 'Base' && r.id === meta.bestTotal ? 'val-pos' : 'val-neu'}">${fmt(s.total)}</td>
+      <td>${fmtYear(s.aer)}</td>
+    </tr>
+  `).join('');
+}
+
+function tcBreakevenDailyRate(opt, spotBase) {
+  if (tcIsSpotArc(opt)) return spotBase;
+  return opt.rate;
+}
+
+/** TC charter length for ranking; spot arcs = 0 (shorter fixed cover). */
+function tcCharterDurationYears(opt) {
+  if (!opt || tcIsSpotArc(opt)) return 0;
+  return tcDurationYearsTotal(opt);
+}
+
+/** Pick winner; on equal metric prefer longer TC charter (safer vs spot tail). */
+function tcPickBestResult(results, getValue) {
+  if (!results?.length) return null;
+  return results.reduce((best, r) => {
+    const vb = getValue(best);
+    const vr = getValue(r);
+    if (vr > vb) return r;
+    if (vr < vb) return best;
+    return tcCharterDurationYears(r) > tcCharterDurationYears(best) ? r : best;
+  });
+}
+
+/** Undiscounted average annual earnings: total gross ÷ duration (years). */
+function tcAnnEquivAnnual(totalGross, durationYears) {
+  const y = Math.max(0, Number(durationYears) || 0);
+  const t = Number(totalGross);
+  if (!Number.isFinite(t) || y < 1 / 365) return 0;
+  return t / y;
+}
+
+function computeTcOptionResult(opt, durY, disc, spotBear, spotBase, spotBull, horizon) {
+  const hY = Math.max(0, Number(horizon) || 0);
+  if (tcIsSpotArc(opt)) {
+    const scenBear = npv(spotBear, durY, disc, 0);
+    const scenBase = npv(spotBase, durY, disc, 0);
+    const scenBull = npv(spotBull, durY, disc, 0);
+    const totalBear = totalEarnings(spotBear, durY);
+    const total = totalEarnings(spotBase, durY);
+    const totalBull = totalEarnings(spotBull, durY);
+    return {
+      total, totalBear, totalBull,
+      aer: tcAnnEquivAnnual(total, durY),
+      aerBear: tcAnnEquivAnnual(totalBear, durY),
+      aerBull: tcAnnEquivAnnual(totalBull, durY),
+      scenBear, scenBase, scenBull,
+      spotBear, spotBase, spotBull,
+      displayRate: spotBase,
+    };
+  }
+  const total = totalGrossTcPlusSpot(opt.rate, durY, spotBase, horizon);
+  const scenBear = scenarioValue(opt.rate, durY, spotBear, horizon, disc);
+  const scenBase = scenarioValue(opt.rate, durY, spotBase, horizon, disc);
+  const scenBull = scenarioValue(opt.rate, durY, spotBull, horizon, disc);
+  return {
+    total,
+    aer: tcAnnEquivAnnual(total, hY),
+    scenBear, scenBase, scenBull,
+    displayRate: opt.rate,
+  };
+}
+
 function addTC(defaults = {}) {
   if (tcOptions.length >= 5) return alert('Max 5 options');
+  const isSpot = defaults.arcType === 'spot';
+  if (isSpot && tcHasSpotArc()) return alert('Only one SPOT arc allowed');
   const id = ++tcId;
   const color = COLORS[tcOptions.length % COLORS.length];
-  const opt = { id, color, label: defaults.label || `Arc ${id}`, rate: defaults.rate || 25000, duration: defaults.duration || 1, startDelay: 0 };
+  const opt = {
+    id,
+    color,
+    arcType: isSpot ? 'spot' : 'tc',
+    label: isSpot ? 'SPOT' : (defaults.label || `Arc ${id}`),
+    rate: isSpot ? null : defaults.rate || 25000,
+    durationYears: defaults.durationYears != null ? defaults.durationYears : null,
+    durationMonths: defaults.durationMonths != null ? defaults.durationMonths : null,
+    duration: defaults.duration != null ? defaults.duration : 0,
+    startDelay: 0,
+  };
+  tcNormalizeOption(opt);
   tcOptions.push(opt);
   renderTCList();
   debouncePersist('tc', () => { void saveTCOptions(); });
+}
+
+function addSpotArc() {
+  if (tcHasSpotArc()) return alert('Only one SPOT arc allowed');
+  addTC({ arcType: 'spot', label: 'SPOT' });
+}
+
+function updateTcAddSpotButton() {
+  const btn = document.querySelector('.add-tc-btn--spot');
+  if (!btn) return;
+  const disabled = tcHasSpotArc();
+  btn.disabled = disabled;
+  btn.style.opacity = disabled ? '0.45' : '';
+  btn.style.cursor = disabled ? 'not-allowed' : '';
 }
 
 function removeTC(id) {
@@ -6867,38 +7328,66 @@ function renderTCList() {
   const container = document.getElementById('tcOptions');
   container.innerHTML = '';
   tcOptions.forEach(opt => {
+    tcNormalizeOption(opt);
+    const isSpot = tcIsSpotArc(opt);
     const row = document.createElement('div');
-    row.className = 'tc-row';
+    row.className = 'tc-row' + (isSpot ? ' tc-row--spot' : '');
     row.id = `tc-row-${opt.id}`;
+    const rateField = isSpot
+      ? `<div class="field tc-spot-field-rate">
+          <label>Rate</label>
+          ${tcFmtSpotRatesStackHtml()}
+        </div>`
+      : `<div class="field">
+          <label>Rate $/day</label>
+          <input ${numInputHtml(opt.rate, 0, `updateTC(${opt.id},'rate',parseNum(this.value))`)}>
+        </div>`;
+    const refTc = tcLongestTcArcOption();
+    const horizonY = tcMaxTcArcDurationYears();
+    const spotDurLabel = refTc && horizonY > 0 ? tcFmtDurationYearsAs(refTc, horizonY) : '—';
+    const durationField = isSpot
+      ? `<div class="field tc-spot-field-duration">
+          <label>Duration</label>
+          <span class="tc-spot-value tc-spot-value--duration">${spotDurLabel}</span>
+        </div>`
+      : `<div class="field">
+          <label>Duration</label>
+          <div class="tc-ym-row">
+            <input ${numInputHtml(opt.durationYears, 0, `updateTC(${opt.id},'durationYears',parseNum(this.value))`)} placeholder="Years" aria-label="Years">
+            <input ${numInputHtml(opt.durationMonths, 0, `updateTC(${opt.id},'durationMonths',parseNum(this.value))`)} placeholder="Months" aria-label="Months">
+          </div>
+        </div>`;
+    const headerLabel = isSpot
+      ? `<span class="tc-spot-fixed-label">SPOT</span>`
+      : `<input class="tc-label-input" placeholder="Label" value="${opt.label}" oninput="updateTC(${opt.id},'label',this.value)">`;
     row.innerHTML = `
       <div class="tc-row-header">
         <div class="tc-dot" style="background:${opt.color}"></div>
-        <input class="tc-label-input" placeholder="Label" value="${opt.label}" oninput="updateTC(${opt.id},'label',this.value)">
-        <button class="remove-btn" data-admin-only onclick="removeTC(${opt.id})">×</button>
+        ${headerLabel}
+        <button type="button" class="remove-btn" onclick="removeTC(${opt.id})" aria-label="Remove arc">×</button>
       </div>
       <div class="tc-inputs">
-        <div class="field">
-          <label>Rate $/day</label>
-          <input ${numInputHtml(opt.rate, 0, `updateTC(${opt.id},'rate',parseNum(this.value))`)}>
-        </div>
-        <div class="field">
-          <label>Duration yrs</label>
-          <input ${numInputHtml(opt.duration, 2, `updateTC(${opt.id},'duration',parseNum(this.value))`)}>
-        </div>
-        <div class="field">
-          <label>Delay (days)</label>
-          <input ${numInputHtml(opt.startDelay, 0, `updateTC(${opt.id},'startDelay',parseNum(this.value))`)}>
-        </div>
+        ${rateField}
+        ${durationField}
       </div>
     `;
     container.appendChild(row);
   });
+  updateTcAddSpotButton();
   applyRoleUI();
 }
 
 function updateTC(id, field, val) {
   const opt = tcOptions.find(t => t.id === id);
-  if (opt) opt[field] = val;
+  if (!opt) return;
+  if (tcIsSpotArc(opt) && (field === 'durationYears' || field === 'durationMonths' || field === 'rate' || field === 'label')) return;
+  opt[field] = val;
+  if (field === 'durationYears' || field === 'durationMonths') {
+    if (val === '' || val == null) opt[field] = null;
+    opt.duration = tcDurationYearsTotal(opt);
+    opt.startDelay = 0;
+    renderTCList();
+  }
   debouncePersist('tc', () => { void saveTCOptions(); });
 }
 
@@ -6916,12 +7405,11 @@ function totalEarnings(rate_day, duration_years) {
   return rate_day * duration_years * 365;
 }
 
-function annualEquivalentNPV(pv, duration_years, discount_rate_annual) {
-  const r = discount_rate_annual / 100;
-  if (r === 0) return pv / (duration_years);
-  const n = duration_years;
-  const crf = (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-  return pv * crf;
+function totalGrossTcPlusSpot(tcRate, tcDurationYears, spotRate, horizonYears) {
+  const tcY = Math.max(0, Number(tcDurationYears) || 0);
+  const hY = Math.max(0, Number(horizonYears) || 0);
+  const spotY = Math.max(0, hY - tcY);
+  return totalEarnings(tcRate, tcY) + totalEarnings(spotRate, spotY);
 }
 
 function scenarioValue(tcRate, tcDuration, spotRate, horizon, discount_rate) {
@@ -6936,15 +7424,17 @@ function scenarioValue(tcRate, tcDuration, spotRate, horizon, discount_rate) {
   return pv;
 }
 
-function breakeven(a, b, horizon, discount_rate) {
+function breakeven(a, b, horizon, discount_rate, spotBase) {
+  const rateA = tcBreakevenDailyRate(a, spotBase);
+  const rateB = tcBreakevenDailyRate(b, spotBase);
   const dr = Math.pow(1 + discount_rate / 100, 1 / 365) - 1;
   const hDays = Math.round(horizon * 365);
-  const aDays = Math.min(Math.round(a.duration * 365), hDays);
-  const bDays = Math.min(Math.round(b.duration * 365), hDays);
+  const aDays = Math.min(Math.round(tcEffectiveDurationYears(a) * 365), hDays);
+  const bDays = Math.min(Math.round(tcEffectiveDurationYears(b) * 365), hDays);
 
   let fixedA = 0, fixedB = 0;
-  for (let d = 0; d < aDays; d++) fixedA += a.rate / Math.pow(1 + dr, d);
-  for (let d = 0; d < bDays; d++) fixedB += b.rate / Math.pow(1 + dr, d);
+  for (let d = 0; d < aDays; d++) fixedA += rateA / Math.pow(1 + dr, d);
+  for (let d = 0; d < bDays; d++) fixedB += rateB / Math.pow(1 + dr, d);
 
   let multA = 0, multB = 0;
   for (let d = aDays; d < hDays; d++) multA += 1 / Math.pow(1 + dr, d);
@@ -6975,6 +7465,42 @@ function onTcVesselNameInput() {
   debouncePersist('tc', () => { void saveTCOptions(); });
 }
 
+const TC_EMPTY_RESULTS_HTML = `
+    <div class="empty-state">
+      <div class="icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" aria-hidden="true"><path fill="#a8b8a8" d="m249.46 122.18l-28.34-7.09a93.87 93.87 0 0 0-80.22-80.21l-7.08-28.34a6 6 0 0 0-11.64 0l-7.08 28.34a93.87 93.87 0 0 0-80.22 80.21l-28.34 7.09a6 6 0 0 0 0 11.64l28.34 7.09a93.87 93.87 0 0 0 80.22 80.21l7.08 28.34a6 6 0 0 0 11.64 0l7.08-28.34a93.87 93.87 0 0 0 80.22-80.21l28.34-7.09a6 6 0 0 0 0-11.64m-41.05-10.26L157 99.05l-12.92-51.46a81.87 81.87 0 0 1 64.33 64.33m-63-9.76L128 119.51l-17.36-17.35L128 32.74Zm-33.49-54.57L99.05 99.05l-51.46 12.87a81.87 81.87 0 0 1 64.33-64.33m-9.76 63.06L119.52 128l-17.36 17.35L32.74 128Zm-54.57 33.43L99.05 157l12.87 51.46a81.87 81.87 0 0 1-64.33-64.38m63.05 9.76L128 136.49l17.36 17.35L128 223.26Zm33.44 54.57L157 157l51.46-12.87a81.87 81.87 0 0 1-64.38 64.28m9.76-63.06L136.48 128l17.36-17.35L223.26 128Z"/></svg></div>
+      <div>Add Arcs to run analysis</div>
+    </div>
+  `;
+
+function clearTcResults() {
+  const container = document.getElementById('results');
+  if (!container) return;
+  container.innerHTML = TC_EMPTY_RESULTS_HTML;
+  lastTcAnalysis = null;
+}
+
+function resetTcAnalysis() {
+  clearTcResults();
+  tcOptions = [];
+  tcId = 0;
+  renderTCList();
+  const vesselEl = document.getElementById('tcVesselName');
+  if (vesselEl) vesselEl.value = '';
+  clearTcVesselNameError();
+  const drEl = document.getElementById('discountRate');
+  if (drEl) drEl.value = '0';
+  const vtEl = document.getElementById('vesselType');
+  if (vtEl) vtEl.value = 'MR Tanker';
+  const bearEl = document.getElementById('spotBear');
+  if (bearEl) bearEl.value = '17,000';
+  const baseEl = document.getElementById('spotBase');
+  if (baseEl) baseEl.value = '22,000';
+  const bullEl = document.getElementById('spotBull');
+  if (bullEl) bullEl.value = '27,000';
+  formatAllNumInputs(document.getElementById('tab-tc'));
+  debouncePersist('tc', () => { void saveTCOptions(); });
+}
+
 async function runAnalysis() {
   if (tcOptions.length < 1) return alert('Add at least one TC option');
   if (!hasTcVesselName()) {
@@ -7001,34 +7527,27 @@ async function runAnalysis() {
     const spotBase = parseNum(document.getElementById('spotBase').value);
     const spotBull = parseNum(document.getElementById('spotBull').value);
 
-    const maxDuration = Math.max(...tcOptions.map(t => t.duration));
-    const horizon = maxDuration;
+    tcOptions.forEach(tcNormalizeOption);
+    const horizon = tcMaxTcArcDurationYears();
 
     const results = tcOptions.map(opt => {
-      const total = totalEarnings(opt.rate, opt.duration);
-      const pv = npv(opt.rate, opt.duration, disc, opt.startDelay || 0);
-      const aer = annualEquivalentNPV(pv, opt.duration, disc);
-
-      const scenBear = scenarioValue(opt.rate, opt.duration, spotBear, horizon, disc);
-      const scenBase = scenarioValue(opt.rate, opt.duration, spotBase, horizon, disc);
-      const scenBull = scenarioValue(opt.rate, opt.duration, spotBull, horizon, disc);
-
-      return { ...opt, total, pv, aer, scenBear, scenBase, scenBull };
+      const durY = tcEffectiveDurationYears(opt);
+      const m = computeTcOptionResult(opt, durY, disc, spotBear, spotBase, spotBull, horizon);
+      return { ...opt, ...m };
     });
 
-    const bestTotal = results.reduce((a, b) => a.total > b.total ? a : b).id;
-    const bestPV = results.reduce((a, b) => a.pv > b.pv ? a : b).id;
-    const bestBase = results.reduce((a, b) => a.scenBase > b.scenBase ? a : b).id;
+    const bestTotal = tcPickBestResult(results, r => r.total)?.id;
+    const bestBase = tcPickBestResult(results, r => r.scenBase)?.id;
 
     const pairs = [];
     for (let i = 0; i < results.length; i++) {
       for (let j = i + 1; j < results.length; j++) {
-        const bep = breakeven(results[i], results[j], horizon, disc);
+        const bep = breakeven(results[i], results[j], horizon, disc, spotBase);
         pairs.push({ a: results[i], b: results[j], bep });
       }
     }
 
-    renderResults(results, pairs, { bestTotal, bestPV, bestBase, horizon, disc, spotBear, spotBase, spotBull });
+    renderResults(results, pairs, { bestTotal, bestBase, horizon, disc, spotBear, spotBase, spotBull });
   });
 }
 
@@ -7119,6 +7638,11 @@ function fmt(n) {
 function fmtDay(n) {
   if (!n || isNaN(n)) return '—';
   return '$' + n.toLocaleString('en-US', {maximumFractionDigits:0}) + '/d';
+}
+
+function fmtYear(n) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  return fmt(n);
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -7531,13 +8055,13 @@ function buildTcSnapshotForDashboard() {
     return null;
   }
   const { results, meta } = lastTcAnalysis;
-  const best = results.reduce((a, b) => a.scenBase > b.scenBase ? a : b);
+  const best = tcPickBestResult(results, r => r.scenBase);
   const tcVesselEl = document.getElementById('tcVesselName');
   const vesselName = tcVesselEl ? String(tcVesselEl.value || '').trim() || '—' : '—';
   const lines = [
     {
       label: 'Base case winner',
-      value: `${best.label} (${best.duration}Y @ ${fmtDay(best.rate)})`,
+      value: `${best.label} (${tcFmtDuration(best)} @ ${tcIsSpotArc(best) ? 'spot base' : fmtDay(best.rate)})`,
     },
     { label: 'Winner base PV', value: fmt(best.scenBase) },
     { label: 'Horizon', value: `${meta.horizon.toFixed(2)}Y` },
@@ -7572,46 +8096,32 @@ function renderResults(results, pairs, meta) {
   container.innerHTML = '';
   dashAppendResultsSaveBar(container, buildTcSnapshotForDashboard);
 
-  const bestOverall = results.reduce((a, b) => a.scenBase > b.scenBase ? a : b);
-  const verdictEl = document.createElement('div');
-  verdictEl.innerHTML = `
-    <div class="verdict-box">
-      <div class="v-icon">◈</div>
-      <div class="v-text">
-        <div class="v-title">Base Case Winner</div>
-        <div class="v-body">
-          <strong style="color:${bestOverall.color}">${bestOverall.label}</strong> (${bestOverall.duration}Y @ ${fmtDay(bestOverall.rate)}) generates the highest NPV over a
-          <strong>${meta.horizon.toFixed(2)}Y</strong> horizon in the base spot scenario.
-          Total undiscounted earnings: <strong>${fmt(bestOverall.total)}</strong> &mdash;
-          PV of TC cashflows: <strong>${fmt(bestOverall.pv)}</strong>.
-        </div>
-      </div>
-    </div>
-  `;
-  container.appendChild(verdictEl);
-
   const summaryWrap = document.createElement('div');
   summaryWrap.className = 'card';
   let tableHTML = `
     <div class="section-title">Summary Metrics</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:10px">Total gross: TC charter earnings plus base spot for any remaining time. Ann. equiv.: total gross / horizon, annualized ($/yr).</div>
     <table class="summary-table">
       <thead>
         <tr>
-          <th>Option</th><th>Rate</th><th>Duration</th><th>Total Gross</th><th>PV (TC only)</th><th>Ann. Equiv.</th>
+          <th>Option</th><th>Rate</th><th>Duration TC / S</th><th>Total Gross</th><th>Ann. Equiv. ($/yr)</th>
         </tr>
       </thead><tbody>
   `;
 
   results.forEach(r => {
-    const isBestPV = r.id === meta.bestPV;
+    if (tcIsSpotArc(r)) {
+      tableHTML += tcSpotSummaryRowsHtml(r, meta);
+      return;
+    }
+    const isBestTotal = r.id === meta.bestTotal;
     tableHTML += `
       <tr>
-        <td><div class="tc-name-cell"><div class="tc-dot" style="background:${r.color}"></div>${r.label}${isBestPV ? '<span class="best-badge">Best NPV</span>' : ''}</div></td>
-        <td>${fmtDay(r.rate)}</td>
-        <td>${r.duration}Y</td>
-        <td class="${r.id === meta.bestTotal ? 'val-pos' : 'val-neu'}">${fmt(r.total)}</td>
-        <td class="${isBestPV ? 'val-pos' : ''}">${fmt(r.pv)}</td>
-        <td>${fmtDay(r.aer)}</td>
+        <td><div class="tc-name-cell"><div class="tc-dot" style="background:${r.color}"></div>${r.label}${isBestTotal ? '<span class="best-badge">Best</span>' : ''}</div></td>
+        <td>${tcFmtSummaryRateCell(r, meta)}</td>
+        <td>${tcFmtDurationTcPlusSpot(r, meta.horizon)}</td>
+        <td class="${isBestTotal ? 'val-pos' : 'val-neu'}">${fmt(r.total)}</td>
+        <td>${fmtYear(r.aer)}</td>
       </tr>
     `;
   });
@@ -7621,13 +8131,13 @@ function renderResults(results, pairs, meta) {
 
   const matWrap = document.createElement('div');
   matWrap.className = 'card';
-  const bestBear = results.reduce((a, b) => a.scenBear > b.scenBear ? a : b).id;
-  const bestBase2 = results.reduce((a, b) => a.scenBase > b.scenBase ? a : b).id;
-  const bestBull = results.reduce((a, b) => a.scenBull > b.scenBull ? a : b).id;
+  const bestBear = tcPickBestResult(results, r => r.scenBear)?.id;
+  const bestBase2 = tcPickBestResult(results, r => r.scenBase)?.id;
+  const bestBull = tcPickBestResult(results, r => r.scenBull)?.id;
 
   let matHTML = `
     <div class="section-title">Scenario Matrix — PV over ${meta.horizon.toFixed(2)}Y Horizon</div>
-    <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px">TC earnings at fixed rate, remainder at scenario spot. Spot: Bear ${fmtDay(meta.spotBear)} / Base ${fmtDay(meta.spotBase)} / Bull ${fmtDay(meta.spotBull)}</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px">Scenarios: Bear ${fmtDay(meta.spotBear)} / Base ${fmtDay(meta.spotBase)} / Bull ${fmtDay(meta.spotBull)}</div>
     <table class="matrix-table">
       <thead><tr><th>Option</th><th style="color:var(--red)">Bear</th><th style="color:var(--amber)">Base</th><th style="color:var(--accent)">Bull</th><th>Score</th></tr></thead>
       <tbody>
@@ -7677,22 +8187,23 @@ function renderResults(results, pairs, meta) {
     container.appendChild(bepWrap);
   }
 
-  const chartWrap = document.createElement('div');
-  chartWrap.className = 'card';
-  chartWrap.innerHTML = `<div class="section-title">NPV Sensitivity to Spot Rate (After TC Expiry)</div><canvas id="sensitivityChart" height="220"></canvas>`;
-  container.appendChild(chartWrap);
 
-  requestAnimationFrame(() => drawChart(results, meta));
+
+  const exportWrap = document.createElement('div');
+  exportWrap.className = 'chain-export-wrap';
+  exportWrap.innerHTML = `<button type="button" class="chain-export-btn" onclick="exportTcAnalysis()">Export</button>`;
+  container.appendChild(exportWrap);
 
   lastTcAnalysis = {
     results: results.map(r => ({
       id: r.id,
       label: r.label,
       color: r.color,
+      arcType: r.arcType,
       rate: r.rate,
+      displayRate: r.displayRate,
       duration: r.duration,
       total: r.total,
-      pv: r.pv,
       aer: r.aer,
       scenBear: r.scenBear,
       scenBase: r.scenBase,
@@ -7705,105 +8216,9 @@ function renderResults(results, pairs, meta) {
       spotBase: meta.spotBase,
       spotBull: meta.spotBull,
       bestTotal: meta.bestTotal,
-      bestPV: meta.bestPV,
       bestBase: meta.bestBase,
     },
   };
-}
-
-function drawChart(results, meta) {
-  const canvas = document.getElementById('sensitivityChart');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const root = getComputedStyle(document.documentElement);
-  const cssVar = (name, fallback) => (root.getPropertyValue(name).trim() || fallback);
-  const border = cssVar('--border', '#252825');
-  const textMuted = cssVar('--text-muted', '#4a504a');
-  const textDim = cssVar('--text-dim', '#7a807a');
-  const colRed = cssVar('--red', '#b87878');
-  const colAmber = cssVar('--amber', '#b89858');
-  const colAccent = cssVar('--accent', '#a8b8a8');
-  const W = canvas.parentElement.clientWidth - 36;
-  const H = 220;
-  canvas.width = W; canvas.height = H;
-
-  const PAD = { top: 16, right: 20, bottom: 36, left: 72 };
-  const cW = W - PAD.left - PAD.right;
-  const cH = H - PAD.top - PAD.bottom;
-
-  const spotMin = 5000, spotMax = 60000;
-  const steps = 80;
-  const spotRange = Array.from({length: steps}, (_, i) => spotMin + (spotMax - spotMin) * i / (steps - 1));
-
-  const series = results.map(r => ({
-    color: r.color, label: r.label,
-    values: spotRange.map(s => scenarioValue(r.rate, r.duration, s, meta.horizon, meta.disc))
-  }));
-
-  const allVals = series.flatMap(s => s.values);
-  const minV = Math.min(...allVals);
-  const maxV = Math.max(...allVals);
-  const vRange = maxV - minV || 1;
-
-  const xMap = s => PAD.left + ((s - spotMin) / (spotMax - spotMin)) * cW;
-  const yMap = v => PAD.top + (1 - (v - minV) / vRange) * cH;
-
-  ctx.strokeStyle = border; ctx.lineWidth = 1;
-  for (let i = 0; i <= 4; i++) {
-    const y = PAD.top + (i / 4) * cH;
-    ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left + cW, y); ctx.stroke();
-    const val = maxV - (vRange * i / 4);
-    ctx.fillStyle = textMuted; ctx.font = '13px Consolas, monospace'; ctx.textAlign = 'right';
-    ctx.fillText(fmt(val), PAD.left - 6, y + 4);
-  }
-
-  [10000, 20000, 30000, 40000, 50000].forEach(s => {
-    const x = xMap(s);
-    ctx.fillStyle = textMuted; ctx.font = '13px Consolas, monospace'; ctx.textAlign = 'center';
-    ctx.fillText('$' + (s/1000) + 'k', x, H - PAD.bottom + 14);
-  });
-
-  const scenarios = [
-    { val: meta.spotBear, color: colRed, label: 'Bear' },
-    { val: meta.spotBase, color: colAmber, label: 'Base' },
-    { val: meta.spotBull, color: colAccent, label: 'Bull' },
-  ];
-
-  scenarios.forEach(sc => {
-    const x = xMap(sc.val);
-    ctx.setLineDash([3, 4]); ctx.strokeStyle = sc.color + '55'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(x, PAD.top); ctx.lineTo(x, PAD.top + cH); ctx.stroke();
-    ctx.setLineDash([]);
-  });
-
-  series.forEach(s => {
-    ctx.strokeStyle = s.color; ctx.lineWidth = 2;
-    ctx.shadowColor = s.color; ctx.shadowBlur = 4;
-    ctx.beginPath();
-    spotRange.forEach((sp, i) => {
-      const x = xMap(sp); const y = yMap(s.values[i]);
-      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-    });
-    ctx.stroke(); ctx.shadowBlur = 0;
-  });
-
-  ctx.fillStyle = textMuted; ctx.font = '13px Consolas, monospace'; ctx.textAlign = 'center';
-  ctx.fillText('Average Spot Rate ($/day) After TC Expiry', PAD.left + cW / 2, H - 4);
-
-  let lx = PAD.left;
-  series.forEach(s => {
-    ctx.fillStyle = s.color; ctx.fillRect(lx, 4, 14, 3);
-    ctx.fillStyle = textDim; ctx.font = '13px Consolas, monospace'; ctx.textAlign = 'left';
-    ctx.fillText(s.label, lx + 18, 11);
-    lx += ctx.measureText(s.label).width + 34;
-  });
-}
-
-function refreshChartsAfterThemeChange() {
-  if (!lastTcAnalysis) return;
-  if (!document.getElementById('sensitivityChart')) return;
-  const { results, meta } = lastTcAnalysis;
-  requestAnimationFrame(() => drawChart(results, meta));
 }
 
 renderTCList();
@@ -8696,11 +9111,120 @@ function buildChainExportMount(source) {
   const defaultsCard = defaultsWrap.firstElementChild;
   if (defaultsCard) mount.appendChild(defaultsCard);
 
-  source.querySelectorAll(':scope > *:not(.chain-export-wrap)').forEach(node => {
+  source.querySelectorAll(':scope > *:not(.chain-export-wrap):not(.results-save-bar)').forEach(node => {
     mount.appendChild(node.cloneNode(true));
   });
 
   return mount;
+}
+
+function tcAnalysisExportHtml() {
+  const showText = (value) => (value != null && String(value).trim() !== '' ? String(value).trim() : '—');
+  const vesselEl = document.getElementById('tcVesselName');
+  const vessel = vesselEl ? String(vesselEl.value || '').trim() : '';
+  const discEl = document.getElementById('discountRate');
+  const vesselTypeEl = document.getElementById('vesselType');
+  const vesselType = vesselTypeEl?.options?.[vesselTypeEl.selectedIndex]?.text ?? '—';
+  const rows = [
+    ['Vessel', showText(vessel)],
+    ['Discount rate %/yr', showText(discEl?.value)],
+    ['Vessel type', showText(vesselType)],
+    ['Spot Bear $/day', showText(document.getElementById('spotBear')?.value)],
+    ['Spot Base $/day', showText(document.getElementById('spotBase')?.value)],
+    ['Spot Bull $/day', showText(document.getElementById('spotBull')?.value)],
+  ];
+  const spotRates = getTcSpotScenarioRates();
+  const horizon = tcMaxTcArcDurationYears();
+  const arcSummary = tcOptions.flatMap(o => {
+    if (tcIsSpotArc(o)) {
+      const ref = tcLongestTcArcOption();
+      const dur = ref ? tcFmtDurationYearsAs(ref, horizon) : '—';
+      return [
+        `SPOT (Bear): ${fmtDay(spotRates.spotBear)} · ${dur}`,
+        `SPOT (Base): ${fmtDay(spotRates.spotBase)} · ${dur}`,
+        `SPOT (Bull): ${fmtDay(spotRates.spotBull)} · ${dur}`,
+      ];
+    }
+    const dur = tcFmtDurationTcPlusSpot(o, horizon);
+    let line = `${o.label}: ${fmtDay(o.rate)} · ${dur}`;
+    if (tcArcHasBaseSpotTail(o, horizon)) line += ` · base spot ${fmtDay(spotRates.spotBase)}`;
+    return [line];
+  }).join('<br>') || '—';
+  const cells = rows.map(([label, value]) => `
+    <div class="field">
+      <label>${label}</label>
+      <div class="export-default-value">${value}</div>
+    </div>`).join('');
+  const arcsCell = `
+    <div class="field" style="grid-column:1/-1">
+      <label>Arcs</label>
+      <div class="export-default-value">${arcSummary}</div>
+    </div>`;
+  return `<div class="card export-vessel-defaults"><div class="params-grid-3">${cells}${arcsCell}</div></div>`;
+}
+
+function tcAnalysisExportFilename() {
+  const now = new Date();
+  const dd = String(now.getDate()).padStart(2, '0');
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const rawName = (document.getElementById('tcVesselName')?.value || '').trim();
+  const vesselName = rawName
+    ? rawName.replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, '_')
+    : 'Vessel';
+  return `${vesselName}_${dd}${mm}_tc.pdf`;
+}
+
+function buildTcExportMount(source) {
+  const mount = document.createElement('div');
+  mount.className = 'chain-export-surface';
+  mount.setAttribute('aria-hidden', 'true');
+
+  const headerWrap = document.createElement('div');
+  headerWrap.innerHTML = tcAnalysisExportHtml();
+  const headerCard = headerWrap.firstElementChild;
+  if (headerCard) mount.appendChild(headerCard);
+
+  source.querySelectorAll(':scope > *:not(.chain-export-wrap):not(.results-save-bar)').forEach(node => {
+    mount.appendChild(node.cloneNode(true));
+  });
+
+  return mount;
+}
+
+async function exportTcAnalysis() {
+  if (!lastTcAnalysis) return;
+  const source = document.getElementById('results');
+  if (!source) return;
+
+  const btn = source.querySelector('.chain-export-btn');
+  if (btn?.disabled) return;
+
+  await withArcLoading(async () => {
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Exporting…';
+    }
+
+    let mount = null;
+    try {
+      if (typeof html2canvas !== 'function' || !window.jspdf?.jsPDF) {
+        throw new Error('Export libraries failed to load');
+      }
+
+      mount = buildTcExportMount(source);
+      await saveExportMountAsPdf(mount, tcAnalysisExportFilename());
+      mount = null;
+    } catch (err) {
+      console.error(err);
+      alert('Could not export PDF. Check your connection and try again.');
+    } finally {
+      if (mount && mount.parentNode) mount.parentNode.removeChild(mount);
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Export';
+      }
+    }
+  });
 }
 
 async function saveExportMountAsPdf(mount, filename) {
@@ -8713,7 +9237,6 @@ async function saveExportMountAsPdf(mount, filename) {
   document.body.appendChild(mount);
   try {
     htmlEl.setAttribute('data-ui-theme', 'dark');
-    refreshChartsAfterThemeChange();
     await awaitPaint();
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'pt', format: 'a4', compress: true });
@@ -8722,7 +9245,6 @@ async function saveExportMountAsPdf(mount, filename) {
     doc.save(filename);
   } finally {
     htmlEl.setAttribute('data-ui-theme', prevTheme);
-    refreshChartsAfterThemeChange();
     await awaitPaint();
     if (mount.parentNode) mount.parentNode.removeChild(mount);
   }
@@ -8991,17 +9513,17 @@ function renderChainResults(results, vd) {
       ? `<div class="kpi">
           <div class="kpi-label">P/L Scenarios</div>
           <div class="kpi-value scenario-trio">
-            <span class="bear">B: ${fmt(r.profitBear)}</span><br>
-            <span class="base">M: ${fmt(r.profitBase)}</span><br>
-            <span class="bull">U: ${fmt(r.profitBull)}</span>
+            <span class="bear">Bear: ${fmt(r.profitBear)}</span><br>
+            <span class="base">Base: ${fmt(r.profitBase)}</span><br>
+            <span class="bull">Bull: ${fmt(r.profitBull)}</span>
           </div>
         </div>
         <div class="kpi">
           <div class="kpi-label">TCE Scenarios</div>
           <div class="kpi-value scenario-trio">
-            <span class="bear">B: ${fmtDay(r.tceBear)}</span><br>
-            <span class="base">M: ${fmtDay(r.tceBase)}</span><br>
-            <span class="bull">U: ${fmtDay(r.tceBull)}</span>
+            <span class="bear">Bear: ${fmtDay(r.tceBear)}</span><br>
+            <span class="base">Base: ${fmtDay(r.tceBase)}</span><br>
+            <span class="bull">Bull: ${fmtDay(r.tceBull)}</span>
           </div>
         </div>`
       : `<div class="kpi">
