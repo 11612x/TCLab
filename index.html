@@ -1617,76 +1617,237 @@
     display: flex !important;
   }
 
+  .db-widget--saved-list .db-widget-body {
+    min-height: 0;
+    padding: 0;
+  }
+
   .dash-snap-empty {
     font-size: 12px;
     color: var(--text-muted);
     letter-spacing: 0.05em;
     line-height: 1.45;
+    padding: 12px 14px;
   }
 
-  .dash-snap-card {
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 12px 14px;
-    margin-bottom: 12px;
+  .dash-snap-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .dash-snap-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .dash-snap-table th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--surface2);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 400;
+    white-space: nowrap;
+  }
+
+  .dash-snap-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-dim);
+    vertical-align: middle;
+  }
+
+  .dash-snap-table tbody tr.dash-snap-row {
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+
+  .dash-snap-table tbody tr.dash-snap-row:hover td {
     background: var(--surface2);
   }
 
-  .dash-snap-card:last-child {
-    margin-bottom: 0;
-  }
-
-  .dash-snap-card__meta {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 8px 12px;
-    margin-bottom: 10px;
-  }
-
-  .dash-snap-card__line {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 10px 14px;
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--text-dim);
+  .dash-snap-table tbody tr.dash-snap-row:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
   }
 
   .dash-snap-num {
     color: var(--accent);
     font-weight: 700;
+    white-space: nowrap;
   }
 
-  .dash-snap-vessel {
+  .dash-snap-vessel-cell {
     color: var(--text);
     font-weight: 600;
-    text-transform: none;
-    letter-spacing: 0.04em;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .dash-snap-time {
-    font-size: 10px;
-    letter-spacing: 0.04em;
-    text-transform: none;
+  .dash-snap-tce-cell {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .dash-snap-time-cell {
+    font-size: 11px;
     color: var(--text-muted);
+    white-space: nowrap;
   }
 
-  .dash-snap-card__actions {
+  .dash-snap-th-actions,
+  .dash-snap-td-actions {
+    width: 72px;
+    text-align: right;
+    padding-right: 8px;
+  }
+
+  .dash-snap-row__actions {
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 4px;
+    align-items: center;
+    justify-content: flex-end;
     flex-shrink: 0;
   }
 
-  .dash-snap-card__actions-top {
+  .dash-snap-row__actions-top {
     display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: flex-end;
+    gap: 4px;
+  }
+
+  .dash-snap-row__actions .dash-snap-del-confirm-wrap {
+    padding-top: 0;
+  }
+
+  .dash-snap-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9001;
+    background: rgba(10, 12, 11, 0.72);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .dash-snap-overlay[hidden] {
+    display: none !important;
+  }
+
+  .dash-snap-detail {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    max-width: min(96vw, 1120px);
+    width: 100%;
+    max-height: min(92vh, 900px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+  }
+
+  .dash-snap-detail-report {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .dash-snap-detail-report .card,
+  .dash-snap-detail-report .chain-result-card {
+    margin-bottom: 0;
+  }
+
+  .dash-snap-detail-report .summary-table,
+  .dash-snap-detail-report .matrix-table,
+  .dash-snap-detail-report .leg-breakdown {
+    width: 100%;
+  }
+
+  .dash-snap-detail-report .breakeven-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+  }
+
+  .dash-snap-detail-report .export-vessel-defaults {
+    padding: 14px 16px;
+  }
+
+  .dash-snap-detail-report .export-vessel-defaults .params-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px 14px;
+    width: 100%;
+  }
+
+  .dash-snap-detail-report .export-vessel-defaults .field label {
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .dash-snap-detail-report .export-vessel-defaults .export-default-value {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  .dash-snap-detail-fallback {
+    margin: 0;
+  }
+
+  .dash-snap-detail__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .dash-snap-detail__title {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text);
+    line-height: 1.35;
+  }
+
+  .dash-snap-detail__close {
+    flex-shrink: 0;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    width: 32px;
+    height: 32px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  .dash-snap-detail__close:hover {
+    color: var(--text);
+    border-color: var(--border-light);
+  }
+
+  .dash-snap-detail__body {
+    padding: 14px 18px 18px;
+    overflow: auto;
   }
 
   .dash-snap-del-confirm-wrap[hidden] {
@@ -3210,6 +3371,35 @@
     gap: 10px;
   }
 
+  #tab-voy .leg-extras-expand-row {
+    margin-top: 4px;
+    margin-bottom: 2px;
+  }
+
+  #tab-voy .leg-extras-toggle {
+    background: none;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    padding: 0;
+    text-align: left;
+  }
+
+  #tab-voy .leg-extras-toggle:hover {
+    text-decoration: underline;
+  }
+
+  #tab-voy .leg-extras-extra {
+    margin-top: 8px;
+  }
+
+  #tab-voy .leg-extras-extra[hidden] {
+    display: none;
+  }
+
   #tab-voy .spec-grid input {
     background: var(--bg);
     border: 1px solid var(--border);
@@ -4604,6 +4794,19 @@
     </div>
     <div class="live-pos-detail__body">
       <dl id="livePosDetailDl"></dl>
+    </div>
+  </div>
+</div>
+
+<div id="dashSnapDetailOverlay" class="dash-snap-overlay" hidden aria-hidden="true">
+  <div class="dash-snap-detail" role="dialog" aria-modal="true" aria-labelledby="dashSnapDetailTitle">
+    <div class="dash-snap-detail__head">
+      <div class="dash-snap-detail__title" id="dashSnapDetailTitle">Saved run</div>
+      <button type="button" class="dash-snap-detail__close" id="dashSnapDetailClose" aria-label="Close">×</button>
+    </div>
+    <div class="dash-snap-detail__body">
+      <div id="dashSnapDetailReport" class="dash-snap-detail-report" hidden></div>
+      <dl id="dashSnapDetailDl" class="dash-snap-dl dash-snap-detail-fallback" hidden></dl>
     </div>
   </div>
 </div>
@@ -6979,6 +7182,7 @@ window.onload = async () => {
   dashElement1QuotesInit();
   dashE2UnresolvedInit();
   dashListRender();
+  dashSnapDetailInit();
   if (!bunkSuppliers.length) {
     bunkAddSupplier();
     bunkAddSupplier();
@@ -7681,7 +7885,9 @@ function dashSnapPush(snapshot) {
     savedAt: Date.now(),
     source: snapshot.source,
     vesselName: snapshot.vesselName,
+    bestTce: snapshot.bestTce || '',
     lines: snapshot.lines,
+    reportHtml: snapshot.reportHtml || '',
   });
   dashSnapSave(data);
   dashListRender();
@@ -7694,11 +7900,12 @@ function dashSnapRemoveByNum(num) {
   const next = data.items.filter(x => Number(x.num) !== n);
   if (next.length === data.items.length) return;
   dashSnapSave({ items: next });
+  dashSnapCloseDetail();
   dashListRender();
 }
 
 function dashSnapCloseAllDeleteConfirms() {
-  document.querySelectorAll('.dash-snap-card__actions.is-pending-delete').forEach(el => {
+  document.querySelectorAll('.dash-snap-row__actions.is-pending-delete').forEach(el => {
     el.classList.remove('is-pending-delete');
     const wrap = el.querySelector('.dash-snap-del-confirm-wrap');
     if (wrap) wrap.hidden = true;
@@ -7715,6 +7922,7 @@ function dashSnapIsDuplicateOfLatest(snap) {
   if (!data.items.length) return false;
   const x = data.items[0];
   if (x.source !== snap.source || x.vesselName !== snap.vesselName) return false;
+  if (snap.reportHtml && x.reportHtml) return x.reportHtml === snap.reportHtml;
   return JSON.stringify(x.lines) === JSON.stringify(snap.lines);
 }
 
@@ -7930,6 +8138,163 @@ function dashElement1QuotesInit() {
   }, 4 * 60 * 60 * 1000);
 }
 
+let dashSnapDetailInitDone = false;
+
+function dashSnapFmtSavedAt(ts) {
+  return new Date(ts).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+function dashSnapVoyageTypeLabel(source) {
+  return source === 'spot' ? 'Spot' : 'TC';
+}
+
+function dashSnapBestTceFromItem(item) {
+  if (item.bestTce) return item.bestTce;
+  const lines = item.lines || [];
+  if (item.source === 'spot') {
+    const line = lines.find(l => l.label === 'Base TCE');
+    return line ? line.value : '—';
+  }
+  const winner = lines.find(l => l.label === 'Base case winner');
+  if (winner && winner.value) {
+    const m = winner.value.match(/@\s*([^)]+)\)/);
+    if (m) return m[1].trim();
+  }
+  return '—';
+}
+
+function dashSnapDetailInit() {
+  if (dashSnapDetailInitDone) return;
+  const ov = document.getElementById('dashSnapDetailOverlay');
+  const closeBtn = document.getElementById('dashSnapDetailClose');
+  if (!ov) return;
+  dashSnapDetailInitDone = true;
+  if (closeBtn) closeBtn.addEventListener('click', dashSnapCloseDetail);
+  ov.addEventListener('click', e => {
+    if (e.target === ov) dashSnapCloseDetail();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !ov.hidden) dashSnapCloseDetail();
+  });
+}
+
+function dashSnapCloseDetail() {
+  const overlay = document.getElementById('dashSnapDetailOverlay');
+  if (!overlay) return;
+  overlay.hidden = true;
+  overlay.setAttribute('aria-hidden', 'true');
+}
+
+function dashSnapCaptureReportHtml(containerId) {
+  const el = document.getElementById(containerId);
+  if (!el) return '';
+  const clone = el.cloneNode(true);
+  clone.querySelectorAll('.results-save-bar, .chain-export-wrap').forEach(n => n.remove());
+  return clone.innerHTML.trim();
+}
+
+function dashSnapOpenDetail(item) {
+  dashSnapDetailInit();
+  const overlay = document.getElementById('dashSnapDetailOverlay');
+  const titleEl = document.getElementById('dashSnapDetailTitle');
+  const reportEl = document.getElementById('dashSnapDetailReport');
+  const dl = document.getElementById('dashSnapDetailDl');
+  if (!overlay || !titleEl || !item) return;
+  const vessel = item.vesselName || '—';
+  const type = dashSnapVoyageTypeLabel(item.source);
+  titleEl.textContent = `#${item.num} · ${vessel} · ${type} · ${dashSnapFmtSavedAt(item.savedAt)}`;
+
+  const reportHtml = String(item.reportHtml || '').trim();
+  if (reportHtml && reportEl) {
+    reportEl.innerHTML = reportHtml;
+    reportEl.hidden = false;
+    if (dl) {
+      dl.hidden = true;
+      dl.textContent = '';
+    }
+  } else if (dl) {
+    if (reportEl) {
+      reportEl.hidden = true;
+      reportEl.textContent = '';
+    }
+    dl.hidden = false;
+    dl.textContent = '';
+    const rows = [
+      { label: 'ID', value: '#' + item.num },
+      { label: 'Voyage type', value: type },
+      { label: 'Vessel', value: vessel },
+      { label: 'Best TCE', value: dashSnapBestTceFromItem(item) },
+      { label: 'Created', value: dashSnapFmtSavedAt(item.savedAt) },
+      ...(item.lines || []),
+    ];
+    rows.forEach(({ label, value }) => {
+      const dt = document.createElement('dt');
+      dt.textContent = label;
+      const dd = document.createElement('dd');
+      dd.textContent = value;
+      dl.appendChild(dt);
+      dl.appendChild(dd);
+    });
+  }
+
+  overlay.hidden = false;
+  overlay.setAttribute('aria-hidden', 'false');
+}
+
+function dashSnapBuildDeleteActions(item) {
+  const actions = document.createElement('div');
+  actions.className = 'dash-snap-row__actions';
+  const actionsTop = document.createElement('div');
+  actionsTop.className = 'dash-snap-row__actions-top';
+
+  const delBtn = document.createElement('button');
+  delBtn.type = 'button';
+  delBtn.className = 'dash-snap-del';
+  delBtn.setAttribute('aria-label', 'Delete saved run');
+  delBtn.setAttribute('aria-expanded', 'false');
+  delBtn.innerHTML =
+    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="#a8b8a8" stroke-linecap="round" stroke-linejoin="round" d="M14 11v6m-4-6v6M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M4 7h16M7 7l2-4h6l2 4" stroke-width="1"/></svg>';
+
+  const confirmWrap = document.createElement('div');
+  confirmWrap.className = 'dash-snap-del-confirm-wrap';
+  confirmWrap.hidden = true;
+  const confirmBtn = document.createElement('button');
+  confirmBtn.type = 'button';
+  confirmBtn.className = 'dash-snap-del-confirm';
+  confirmBtn.setAttribute('aria-label', 'Confirm delete saved run');
+  confirmBtn.innerHTML =
+    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path fill="#a8b8a8" d="M21 7L9 19l-5.5-5.5l1.41-1.41L9 16.17L19.59 5.59z"/></svg>';
+  confirmBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    e.preventDefault();
+    dashSnapRemoveByNum(item.num);
+  });
+  confirmWrap.appendChild(confirmBtn);
+
+  delBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    e.preventDefault();
+    const open = !confirmWrap.hidden;
+    if (open) {
+      confirmWrap.hidden = true;
+      actions.classList.remove('is-pending-delete');
+      delBtn.setAttribute('aria-label', 'Delete saved run');
+      delBtn.setAttribute('aria-expanded', 'false');
+    } else {
+      dashSnapCloseAllDeleteConfirms();
+      confirmWrap.hidden = false;
+      actions.classList.add('is-pending-delete');
+      delBtn.setAttribute('aria-label', 'Cancel delete');
+      delBtn.setAttribute('aria-expanded', 'true');
+    }
+  });
+
+  actionsTop.appendChild(confirmWrap);
+  actionsTop.appendChild(delBtn);
+  actions.appendChild(actionsTop);
+  return actions;
+}
+
 function dashListRender() {
   const mount = document.getElementById('dashboardSavedList');
   if (!mount) return;
@@ -7939,102 +8304,86 @@ function dashListRender() {
     const empty = document.createElement('div');
     empty.className = 'dash-snap-empty';
     empty.textContent =
-      'No saved runs yet. Switch to List on the dashboard to see saves here. Run TC analysis or Spot comparison, then Save (top right of results).';
+      'No saved runs yet. Switch to List on the dashboard. Run TC analysis or Spot comparison, then Save. Click a row to view full details.';
     mount.appendChild(empty);
     return;
   }
+  const wrap = document.createElement('div');
+  wrap.className = 'dash-snap-table-wrap';
+  const table = document.createElement('table');
+  table.className = 'dash-snap-table';
+  table.setAttribute('aria-label', 'Saved TC and Spot runs');
+
+  const thead = document.createElement('thead');
+  const headTr = document.createElement('tr');
+  ['Vessel', 'Voyage type', 'ID', 'Best TCE', 'Created', ''].forEach((label, i) => {
+    const th = document.createElement('th');
+    th.scope = 'col';
+    th.textContent = label;
+    if (i === 5) {
+      th.className = 'dash-snap-th-actions';
+      th.setAttribute('aria-label', 'Actions');
+    }
+    headTr.appendChild(th);
+  });
+  thead.appendChild(headTr);
+  table.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
   data.items.forEach(item => {
-    const card = document.createElement('div');
-    card.className = 'dash-snap-card';
-    const meta = document.createElement('div');
-    meta.className = 'dash-snap-card__meta';
-    const line = document.createElement('div');
-    line.className = 'dash-snap-card__line';
-    const numEl = document.createElement('span');
-    numEl.className = 'dash-snap-num';
-    numEl.textContent = '#' + item.num;
-    const srcEl = document.createElement('span');
-    srcEl.textContent = item.source === 'spot' ? 'Spot' : 'TC';
-    const vesEl = document.createElement('span');
-    vesEl.className = 'dash-snap-vessel';
-    vesEl.textContent = item.vesselName || '—';
-    line.appendChild(numEl);
-    line.appendChild(srcEl);
-    line.appendChild(vesEl);
-    const timeEl = document.createElement('span');
-    timeEl.className = 'dash-snap-time';
-    timeEl.textContent = new Date(item.savedAt).toLocaleString(undefined, {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    });
+    const tr = document.createElement('tr');
+    tr.className = 'dash-snap-row';
+    tr.tabIndex = 0;
+    tr.setAttribute('role', 'button');
+    tr.setAttribute('aria-label', `View saved run #${item.num}, ${item.vesselName || 'vessel'}`);
 
-    const actions = document.createElement('div');
-    actions.className = 'dash-snap-card__actions';
-    const actionsTop = document.createElement('div');
-    actionsTop.className = 'dash-snap-card__actions-top';
-    actionsTop.appendChild(timeEl);
+    const tdVessel = document.createElement('td');
+    tdVessel.className = 'dash-snap-vessel-cell';
+    tdVessel.textContent = item.vesselName || '—';
 
-    const delBtn = document.createElement('button');
-    delBtn.type = 'button';
-    delBtn.className = 'dash-snap-del';
-    delBtn.setAttribute('aria-label', 'Delete saved run');
-    delBtn.setAttribute('aria-expanded', 'false');
-    delBtn.innerHTML =
-      '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="#a8b8a8" stroke-linecap="round" stroke-linejoin="round" d="M14 11v6m-4-6v6M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M4 7h16M7 7l2-4h6l2 4" stroke-width="1"/></svg>';
+    const tdType = document.createElement('td');
+    tdType.textContent = dashSnapVoyageTypeLabel(item.source);
 
-    const confirmWrap = document.createElement('div');
-    confirmWrap.className = 'dash-snap-del-confirm-wrap';
-    confirmWrap.hidden = true;
-    const confirmBtn = document.createElement('button');
-    confirmBtn.type = 'button';
-    confirmBtn.className = 'dash-snap-del-confirm';
-    confirmBtn.setAttribute('aria-label', 'Confirm delete saved run');
-    confirmBtn.innerHTML =
-      '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path fill="#a8b8a8" d="M21 7L9 19l-5.5-5.5l1.41-1.41L9 16.17L19.59 5.59z"/></svg>';
-    confirmBtn.addEventListener('click', e => {
-      e.stopPropagation();
-      e.preventDefault();
-      dashSnapRemoveByNum(item.num);
-    });
-    confirmWrap.appendChild(confirmBtn);
+    const tdId = document.createElement('td');
+    const numSpan = document.createElement('span');
+    numSpan.className = 'dash-snap-num';
+    numSpan.textContent = '#' + item.num;
+    tdId.appendChild(numSpan);
 
-    delBtn.addEventListener('click', e => {
-      e.stopPropagation();
-      e.preventDefault();
-      const open = !confirmWrap.hidden;
-      if (open) {
-        confirmWrap.hidden = true;
-        actions.classList.remove('is-pending-delete');
-        delBtn.setAttribute('aria-label', 'Delete saved run');
-        delBtn.setAttribute('aria-expanded', 'false');
-      } else {
-        dashSnapCloseAllDeleteConfirms();
-        confirmWrap.hidden = false;
-        actions.classList.add('is-pending-delete');
-        delBtn.setAttribute('aria-label', 'Cancel delete');
-        delBtn.setAttribute('aria-expanded', 'true');
+    const tdTce = document.createElement('td');
+    tdTce.className = 'dash-snap-tce-cell';
+    tdTce.textContent = dashSnapBestTceFromItem(item);
+
+    const tdTime = document.createElement('td');
+    tdTime.className = 'dash-snap-time-cell';
+    tdTime.textContent = dashSnapFmtSavedAt(item.savedAt);
+
+    const tdActions = document.createElement('td');
+    tdActions.className = 'dash-snap-td-actions';
+    tdActions.addEventListener('click', e => e.stopPropagation());
+    tdActions.appendChild(dashSnapBuildDeleteActions(item));
+
+    tr.appendChild(tdVessel);
+    tr.appendChild(tdType);
+    tr.appendChild(tdId);
+    tr.appendChild(tdTce);
+    tr.appendChild(tdTime);
+    tr.appendChild(tdActions);
+
+    const open = () => dashSnapOpenDetail(item);
+    tr.addEventListener('click', open);
+    tr.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        open();
       }
     });
 
-    actionsTop.appendChild(delBtn);
-    actions.appendChild(actionsTop);
-    actions.appendChild(confirmWrap);
-    meta.appendChild(line);
-    meta.appendChild(actions);
-    card.appendChild(meta);
-    const dl = document.createElement('dl');
-    dl.className = 'dash-snap-dl';
-    (item.lines || []).forEach(({ label, value }) => {
-      const dt = document.createElement('dt');
-      dt.textContent = label;
-      const dd = document.createElement('dd');
-      dd.textContent = value;
-      dl.appendChild(dt);
-      dl.appendChild(dd);
-    });
-    card.appendChild(dl);
-    mount.appendChild(card);
+    tbody.appendChild(tr);
   });
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+  mount.appendChild(wrap);
 }
 
 function dashAppendResultsSaveBar(container, getSnapshot) {
@@ -8071,7 +8420,14 @@ function buildTcSnapshotForDashboard() {
       value: `Bear ${fmtDay(meta.spotBear)} · Base ${fmtDay(meta.spotBase)} · Bull ${fmtDay(meta.spotBull)}`,
     },
   ];
-  return { source: 'tc', vesselName, lines };
+  const bestTce = tcIsSpotArc(best) ? fmtDay(best.spotBase) : fmtDay(best.rate);
+  return {
+    source: 'tc',
+    vesselName,
+    lines,
+    bestTce,
+    reportHtml: tcAnalysisExportHtml({ includeArcs: false }) + dashSnapCaptureReportHtml('results'),
+  };
 }
 
 function buildSpotSnapshotForDashboard() {
@@ -8088,7 +8444,13 @@ function buildSpotSnapshotForDashboard() {
     { label: 'Base TCE', value: fmtDay(best.tceBase) },
     { label: 'Arcs compared', value: String(results.length) },
   ];
-  return { source: 'spot', vesselName, lines };
+  return {
+    source: 'spot',
+    vesselName,
+    lines,
+    bestTce: fmtDay(best.tceBase),
+    reportHtml: vesselDefaultsExportHtml(vd) + dashSnapCaptureReportHtml('chainResults'),
+  };
 }
 
 function renderResults(results, pairs, meta) {
@@ -8287,7 +8649,10 @@ function addLeg(chainId, defaults = {}) {
     specBullLumpsum: defaults.specBullLumpsum ?? 1000000,
     portCostFrom: defaults.portCostFrom ?? null,
     portCostTo: defaults.portCostTo ?? null,
-    canalCost: defaults.canalCost ?? 0
+    canalCost: defaults.canalCost ?? 0,
+    tankCleaningCost: defaults.tankCleaningCost ?? 0,
+    awrpCost: defaults.awrpCost ?? 0,
+    extrasExpanded: defaults.extrasExpanded ?? false
   };
   chain.legs.push(leg);
   renderChains();
@@ -8298,6 +8663,20 @@ function removeLeg(chainId, legId) {
   const chain = chains.find(c => c.id === chainId);
   if (!chain) return;
   chain.legs = chain.legs.filter(l => l.id !== legId);
+  renderChains();
+  debouncePersist('voy', () => { void saveVoyageChains(); });
+}
+
+function legExtrasCost(leg) {
+  return (leg.canalCost ?? 0) + (leg.tankCleaningCost ?? 0) + (leg.awrpCost ?? 0);
+}
+
+function toggleLegExtrasExpand(chainId, legId) {
+  const chain = chains.find(c => c.id === chainId);
+  if (!chain) return;
+  const leg = chain.legs.find(l => l.id === legId);
+  if (!leg) return;
+  leg.extrasExpanded = !leg.extrasExpanded;
   renderChains();
   debouncePersist('voy', () => { void saveVoyageChains(); });
 }
@@ -8725,6 +9104,15 @@ function renderLeg(chain, leg, idx) {
       <div class="field"><label>Port cost DISCHARGE $</label><input ${numInputHtml(leg.portCostTo ?? '', 0, `updateLeg(${chain.id},${leg.id},'portCostTo',this.value.trim()===''?null:parseNum(this.value))`)} placeholder="0"></div>
       <div class="field"><label>EXTRAS / Canal $</label><input ${numInputHtml(leg.canalCost, 0, `updateLeg(${chain.id},${leg.id},'canalCost',parseNum(this.value))`)}></div>
     </div>
+    <div class="leg-extras-expand-row">
+      <button type="button" class="leg-extras-toggle" onclick="toggleLegExtrasExpand(${chain.id},${leg.id})">${leg.extrasExpanded ? 'Collapse' : '+ Expand'}</button>
+    </div>
+    <div class="leg-extras-extra" ${leg.extrasExpanded ? '' : 'hidden'}>
+      <div class="leg-grid leg-grid-2">
+        <div class="field"><label>Tank Cleaning $</label><input ${numInputHtml(leg.tankCleaningCost ?? 0, 0, `updateLeg(${chain.id},${leg.id},'tankCleaningCost',parseNum(this.value))`)}></div>
+        <div class="field"><label>AWRP $</label><input ${numInputHtml(leg.awrpCost ?? 0, 0, `updateLeg(${chain.id},${leg.id},'awrpCost',parseNum(this.value))`)}></div>
+      </div>
+    </div>
   `;
   return wrap;
 }
@@ -8864,7 +9252,8 @@ function computeLeg(leg, vd, isFirstLeg, isLastLeg, specOverrides = {}) {
     return gross * commissionFactor;
   }
 
-  const totalCost = bunkerCost + portCost + opexCost + leg.canalCost;
+  const extrasCost = legExtrasCost(leg);
+  const totalCost = bunkerCost + portCost + opexCost + extrasCost;
 
   const incomeBear = incomeFor('bear');
   const incomeBase = incomeFor('base');
@@ -8875,7 +9264,10 @@ function computeLeg(leg, vd, isFirstLeg, isLastLeg, specOverrides = {}) {
     seaDays, portDays, totalDays,
     speed,
     bunkerCost, portCost, opexCost,
-    canalCost: leg.canalCost,
+    canalCost: leg.canalCost ?? 0,
+    tankCleaningCost: leg.tankCleaningCost ?? 0,
+    awrpCost: leg.awrpCost ?? 0,
+    extrasCost,
     totalCost,
     incomeBear, incomeBase, incomeBull,
     profitBear: incomeBear - totalCost,
@@ -8900,7 +9292,7 @@ function computeChain(chain, vd, options = {}) {
 
   // TCE $/day = (income - voyage costs ex-opex) / total days
   // We treat opex as a cost the owner bears either way, so TCE = (income - bunkers - port - canal) / totalDays
-  const voyageCostsExOpex = legs.reduce((a, l) => a + l.bunkerCost + l.portCost + l.canalCost, 0);
+  const voyageCostsExOpex = legs.reduce((a, l) => a + l.bunkerCost + l.portCost + l.extrasCost, 0);
   const tceBear = (totalIncomeBear - voyageCostsExOpex) / totalDays;
   const tceBase = (totalIncomeBase - voyageCostsExOpex) / totalDays;
   const tceBull = (totalIncomeBull - voyageCostsExOpex) / totalDays;
@@ -9118,7 +9510,8 @@ function buildChainExportMount(source) {
   return mount;
 }
 
-function tcAnalysisExportHtml() {
+function tcAnalysisExportHtml(options = {}) {
+  const includeArcs = options.includeArcs !== false;
   const showText = (value) => (value != null && String(value).trim() !== '' ? String(value).trim() : '—');
   const vesselEl = document.getElementById('tcVesselName');
   const vessel = vesselEl ? String(vesselEl.value || '').trim() : '';
@@ -9133,33 +9526,36 @@ function tcAnalysisExportHtml() {
     ['Spot Base $/day', showText(document.getElementById('spotBase')?.value)],
     ['Spot Bull $/day', showText(document.getElementById('spotBull')?.value)],
   ];
-  const spotRates = getTcSpotScenarioRates();
-  const horizon = tcMaxTcArcDurationYears();
-  const arcSummary = tcOptions.flatMap(o => {
-    if (tcIsSpotArc(o)) {
-      const ref = tcLongestTcArcOption();
-      const dur = ref ? tcFmtDurationYearsAs(ref, horizon) : '—';
-      return [
-        `SPOT (Bear): ${fmtDay(spotRates.spotBear)} · ${dur}`,
-        `SPOT (Base): ${fmtDay(spotRates.spotBase)} · ${dur}`,
-        `SPOT (Bull): ${fmtDay(spotRates.spotBull)} · ${dur}`,
-      ];
-    }
-    const dur = tcFmtDurationTcPlusSpot(o, horizon);
-    let line = `${o.label}: ${fmtDay(o.rate)} · ${dur}`;
-    if (tcArcHasBaseSpotTail(o, horizon)) line += ` · base spot ${fmtDay(spotRates.spotBase)}`;
-    return [line];
-  }).join('<br>') || '—';
   const cells = rows.map(([label, value]) => `
     <div class="field">
       <label>${label}</label>
       <div class="export-default-value">${value}</div>
     </div>`).join('');
-  const arcsCell = `
+  let arcsCell = '';
+  if (includeArcs) {
+    const spotRates = getTcSpotScenarioRates();
+    const horizon = tcMaxTcArcDurationYears();
+    const arcSummary = tcOptions.flatMap(o => {
+      if (tcIsSpotArc(o)) {
+        const ref = tcLongestTcArcOption();
+        const dur = ref ? tcFmtDurationYearsAs(ref, horizon) : '—';
+        return [
+          `SPOT (Bear): ${fmtDay(spotRates.spotBear)} · ${dur}`,
+          `SPOT (Base): ${fmtDay(spotRates.spotBase)} · ${dur}`,
+          `SPOT (Bull): ${fmtDay(spotRates.spotBull)} · ${dur}`,
+        ];
+      }
+      const dur = tcFmtDurationTcPlusSpot(o, horizon);
+      let line = `${o.label}: ${fmtDay(o.rate)} · ${dur}`;
+      if (tcArcHasBaseSpotTail(o, horizon)) line += ` · base spot ${fmtDay(spotRates.spotBase)}`;
+      return [line];
+    }).join('<br>') || '—';
+    arcsCell = `
     <div class="field" style="grid-column:1/-1">
       <label>Arcs</label>
       <div class="export-default-value">${arcSummary}</div>
     </div>`;
+  }
   return `<div class="card export-vessel-defaults"><div class="params-grid-3">${cells}${arcsCell}</div></div>`;
 }
 
@@ -9541,7 +9937,7 @@ function renderChainResults(results, vd) {
       <table class="leg-breakdown">
         <thead>
           <tr>
-            <th>#</th><th>Route</th><th>Type</th><th>Days</th><th>Bunkers</th><th>Port</th><th>Canal</th><th>Opex</th><th>${incomeLabel}</th><th>${plLabel}</th>
+            <th>#</th><th>Route</th><th>Type</th><th>Days</th><th>Bunkers</th><th>Port</th><th>Extras</th><th>Opex</th><th>${incomeLabel}</th><th>${plLabel}</th>
           </tr>
         </thead>
         <tbody>
@@ -9555,7 +9951,7 @@ function renderChainResults(results, vd) {
           <td>${l.totalDays.toFixed(1)}</td>
           <td>${fmt(l.bunkerCost)}</td>
           <td>${fmt(l.portCost)}</td>
-          <td>${fmt(l.canalCost)}</td>
+          <td>${fmt(l.extrasCost)}</td>
           <td>${fmt(l.opexCost)}</td>
           <td>${fmt(l.incomeBase)}</td>
           <td class="${l.profitBase >= 0 ? 'val-pos' : 'val-neg'}">${fmt(l.profitBase)}</td>
