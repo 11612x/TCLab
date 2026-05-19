@@ -1,0 +1,93 @@
+/* Shared port autocomplete — used by route, emissions, bunkers iframes */
+.port-ac-wrap,
+.route-port-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.port-ac-wrap input,
+.route-port-wrap input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.port-ac-wrap input.port-valid,
+.route-port-wrap input.port-valid {
+  border-color: var(--accent-dim);
+}
+
+.port-meta {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+  min-height: 1em;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.route-port-list,
+.autocomplete-list,
+.port-ac-list {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  z-index: 25000;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  max-height: 220px;
+  overflow-y: auto;
+  display: none;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.route-port-list.open,
+.autocomplete-list.open,
+.port-ac-list.open,
+.port-ac-list.port-ac-list--floating {
+  display: block;
+}
+
+.port-ac-list.port-ac-list--floating,
+.route-port-list.port-ac-list--floating,
+.autocomplete-list.port-ac-list--floating {
+  position: fixed;
+  right: auto;
+}
+
+.route-port-item,
+.autocomplete-item,
+.port-ac-item {
+  padding: 8px 10px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+.route-port-item:last-child,
+.autocomplete-item:last-child,
+.port-ac-item:last-child {
+  border-bottom: none;
+}
+
+.route-port-item:hover,
+.route-port-item.active,
+.autocomplete-item:hover,
+.autocomplete-item.active,
+.port-ac-item:hover,
+.port-ac-item.active {
+  background: var(--accent-glow);
+  color: var(--accent);
+}
+
+.route-port-empty,
+.autocomplete-empty {
+  padding: 8px 10px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}

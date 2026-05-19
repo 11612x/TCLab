@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Arctium Labs</title>
 <link rel="icon" href="Favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="bunkers.css">
-<link rel="stylesheet" href="emissions.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
@@ -177,6 +175,18 @@
 
   .tab-panel { display: none; }
   .tab-panel.active { display: block; }
+
+  .tab-panel iframe {
+    display: block;
+    width: 100%;
+    height: calc(100vh - 200px);
+    border: none;
+    background: var(--bg);
+  }
+
+  .tab-panel:not(.active) iframe {
+    display: none !important;
+  }
 
   .layout {
     display: grid;
@@ -4058,193 +4068,20 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════════════════ -->
-<!-- TAB 3: BUNKERS (Bunkers_Negotiator.html)                                  -->
-<!-- ═══════════════════════════════════════════════════════════════════════ -->
-<div class="tab-panel" id="tab-bunkers">
-  <div id="bunker-app">
-  <div class="bunker-layout">
-    <div class="card bunker-toolbar">
-      <div class="bunker-toolbar-side">
-        <button class="bunker-toolbar-btn" type="button" onclick="bunkExportPDF()">Export</button>
-      </div>
-      <div class="bunker-toolbar-title">Bunker Negotiator</div>
-      <div class="bunker-toolbar-side right">
-        <button class="bunker-toolbar-btn" type="button" onclick="bunkResetAll()">Reset</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Delivery</div>
-      <div class="bunker-meta-grid">
-        <div class="field">
-          <label>Vessel</label>
-          <input type="text" id="bunk-vessel" onchange="bunkUpdateTitle()">
-        </div>
-        <div class="field port-ac-field">
-          <label>Port</label>
-          <div class="port-ac-wrap route-port-wrap">
-            <input type="text" id="bunk-port" autocomplete="off" placeholder="Search port…" onchange="bunkUpdateTitle()">
-            <div class="port-meta" id="bunk-port-meta"></div>
-            <div class="route-port-list" id="bunk-port-list"></div>
-          </div>
-        </div>
-        <div class="field">
-          <label>Delivery from</label>
-          <input type="text" id="bunk-date-from" placeholder="DD/MM/YY" maxlength="8" oninput="bunkFormatDateInput(this)" onchange="bunkUpdateTitle()">
-        </div>
-        <div class="field">
-          <label>Delivery to</label>
-          <input type="text" id="bunk-date-to" placeholder="DD/MM/YY" maxlength="8" oninput="bunkFormatDateInput(this)" onchange="bunkUpdateTitle()">
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Quantities</div>
-      <div class="bunker-qty-bar">
-        <div class="field">
-          <label>FO qty (MT)</label>
-          <input type="text" inputmode="decimal" class="num-fmt" id="bunk-qty-fo" data-decimals="0" oninput="bunkRecalcAll()">
-        </div>
-        <div class="field">
-          <label>GO qty (MT)</label>
-          <input type="text" inputmode="decimal" class="num-fmt" id="bunk-qty-go" data-decimals="0" oninput="bunkRecalcAll()">
-        </div>
-        <div class="bunker-qty-info" id="bunk-qty-info">0 MT total</div>
-      </div>
-    </div>
-
-    <div id="bunk-suppliers-container"></div>
-
-    <button class="bunker-btn-add-supplier" type="button" onclick="bunkAddSupplier()">+ Add Supplier</button>
-
-    <div class="card bunker-counter-block">
-      <div class="card-title">Lump Sum Counter</div>
-      <div class="bunker-counter-desc">Enter a target total. Suggested FO/GO prices per supplier will scale proportionally to hit it.</div>
-      <div class="bunker-target-row">
-        <div class="field">
-          <label>Target ($)</label>
-          <input type="text" inputmode="decimal" class="num-fmt" id="bunk-target-lumpsum" data-decimals="0" placeholder="e.g. 450,000" oninput="bunkCalcCounters()">
-        </div>
-      </div>
-      <div id="bunk-counter-results"></div>
-    </div>
-  </div>
-  </div>
-</div>
-
-<!-- TAB 4: EMISSIONS                                                        -->
-<!-- ═══════════════════════════════════════════════════════════════════════ -->
 <div class="tab-panel" id="tab-emissions">
-  <div id="emissions-app">
-  <div class="layout">
-    <div class="left-panel">
-      <div class="card">
-        <div class="card-title">Voyage Details</div>
-        <div class="em-voyage-grid">
-          <div class="field span-2">
-            <label>Vessel name</label>
-            <input type="text" id="em-vessel" autocomplete="off">
-          </div>
-          <div class="field span-2">
-            <label>Route coverage</label>
-            <input type="hidden" id="em-voyage-type" value="100">
-            <div class="coverage-toggle">
-              <button type="button" class="active" data-coverage="100" onclick="emSetCoverage('100')">100%</button>
-              <button type="button" data-coverage="50" onclick="emSetCoverage('50')">50%</button>
-            </div>
-          </div>
-          <div class="field span-2">
-            <label>Compliance Year</label>
-            <select id="em-fuel-eu-year"></select>
-          </div>
-          <div class="field port-ac-field">
-            <label>Load Port</label>
-            <div class="port-ac-wrap route-port-wrap">
-              <input type="text" id="em-pol" autocomplete="off" placeholder="Search port…">
-              <div class="port-meta" id="em-pol-meta"></div>
-              <div class="route-port-list" id="em-pol-list"></div>
-            </div>
-          </div>
-          <div class="field port-ac-field">
-            <label>Discharge Port</label>
-            <div class="port-ac-wrap route-port-wrap">
-              <input type="text" id="em-pod" autocomplete="off" placeholder="Search port…">
-              <div class="port-meta" id="em-pod-meta"></div>
-              <div class="route-port-list" id="em-pod-list"></div>
-            </div>
-          </div>
-          <div class="field">
-            <label>Voyage days</label>
-            <input type="text" inputmode="decimal" class="num-fmt" id="em-voyage-days" data-decimals="1">
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Fuel Consumption</div>
-        <div class="em-fuel-table-wrap">
-          <table class="em-fuel-table">
-            <thead>
-              <tr>
-                <th>TYPE</th>
-                <th>MT CONSUMED</th>
-                <th>EF</th>
-                <th>MT/ CO2</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="em-fuel-rows"></tbody>
-          </table>
-        </div>
-        <button class="add-leg-btn" type="button" onclick="emAddFuelRow()">+ Add Fuel</button>
-      </div>
-
-      <div class="card">
-        <div class="card-title">ETS Parameters</div>
-        <div class="em-ets-grid">
-          <div class="field">
-            <label>Speed (kn)</label>
-            <input type="text" inputmode="decimal" class="num-fmt" id="em-speed" data-decimals="1" value="12.5">
-          </div>
-          <div class="field">
-            <label>Consumption (mt/day)</label>
-            <input type="text" inputmode="decimal" class="num-fmt" id="em-fuel-rate" data-decimals="1" value="25">
-          </div>
-          <div class="field span-2">
-            <label>EUA price €/tCO₂</label>
-            <input type="text" inputmode="decimal" class="num-fmt" id="em-eua-price" data-decimals="0" value="80">
-          </div>
-        </div>
-      </div>
-
-      <div class="spot-actions-wrap">
-        <div class="spot-actions">
-          <button class="run-btn" type="button" onclick="emCalcETS()">Calculate Emissions</button>
-          <button class="spot-reset-btn" type="button" onclick="emResetETS()" aria-label="Reset" title="Reset"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-hidden="true"><path fill="#a8b8a8" d="M8.884 3.116a1.25 1.25 0 0 1 0 1.768L6.018 7.75H17.5c5.937 0 10.75 4.813 10.75 10.75S23.437 29.25 17.5 29.25S6.75 24.437 6.75 18.5a1.25 1.25 0 1 1 2.5 0a8.25 8.25 0 1 0 8.25-8.25H6.018l2.866 2.866a1.25 1.25 0 0 1-1.768 1.768l-5-5a1.25 1.25 0 0 1 0-1.768l5-5a1.25 1.25 0 0 1 1.768 0"/></svg></button>
-        </div>
-      </div>
-    </div>
-
-    <div class="right-panel" id="emissionsResults">
-      <div class="empty-state">
-        <div class="icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" aria-hidden="true"><path fill="#a8b8a8" d="m249.46 122.18l-28.34-7.09a93.87 93.87 0 0 0-80.22-80.21l-7.08-28.34a6 6 0 0 0-11.64 0l-7.08 28.34a93.87 93.87 0 0 0-80.22 80.21l-28.34 7.09a6 6 0 0 0 0 11.64l28.34 7.09a93.87 93.87 0 0 0 80.22 80.21l7.08 28.34a6 6 0 0 0 11.64 0l7.08-28.34a93.87 93.87 0 0 0 80.22-80.21l28.34-7.09a6 6 0 0 0 0-11.64m-41.05-10.26L157 99.05l-12.92-51.46a81.87 81.87 0 0 1 64.33 64.33m-63-9.76L128 119.51l-17.36-17.35L128 32.74Zm-33.49-54.57L99.05 99.05l-51.46 12.87a81.87 81.87 0 0 1 64.33-64.33m-9.76 63.06L119.52 128l-17.36 17.35L32.74 128Zm-54.57 33.43L99.05 157l12.87 51.46a81.87 81.87 0 0 1-64.33-64.38m63.05 9.76L128 136.49l17.36 17.35L128 223.26Zm33.44 54.57L157 157l51.46-12.87a81.87 81.87 0 0 1-64.38 64.28m9.76-63.06L136.48 128l17.36-17.35L223.26 128Z"/></svg></div>
-        <div>Enter voyage details and calculate ETS</div>
-      </div>
-    </div>
-  </div>
-  </div>
+  <iframe id="emissionsFrame" data-src="Emissions_Calculator.html" title="Emissions calculator"></iframe>
 </div>
 
 <div class="tab-panel" id="tab-route">
-  <iframe id="routeFrame" src="route-calculator.html"
-    style="width:100%;height:calc(100vh - 200px);border:none;background:var(--bg)"></iframe>
+  <iframe id="routeFrame" data-src="route-calculator.html" title="Route calculator"></iframe>
+</div>
+
+<div class="tab-panel" id="tab-bunkers">
+  <iframe id="bunkerFrame" data-src="Bunkers_Negotiator.html" title="Bunker negotiator"></iframe>
 </div>
 
 <div class="tab-panel" id="tab-tank-cleaning">
-  <iframe id="tankCleaningFrame" src="tank-cleaning.html"
-    style="width:100%;height:calc(100vh - 200px);border:none;background:var(--bg)"></iframe>
+  <iframe id="tankCleaningFrame" data-src="tank-cleaning.html" title="Tank cleaning"></iframe>
 </div>
 
 <div id="livePosDetailOverlay" class="live-pos-overlay" hidden aria-hidden="true">
@@ -4512,6 +4349,24 @@ async function saveVoyageChains() {
 const TAB_STORAGE_KEY = 'arctium_active_tab';
 const MORE_TAB_IDS = ['tab-bunkers', 'tab-tank-cleaning'];
 const VALID_TABS = ['tab-dashboard', 'tab-tc', 'tab-voy', 'tab-emissions', 'tab-route', ...MORE_TAB_IDS];
+const TAB_IFRAME_IDS = {
+  'tab-emissions': 'emissionsFrame',
+  'tab-route': 'routeFrame',
+  'tab-bunkers': 'bunkerFrame',
+  'tab-tank-cleaning': 'tankCleaningFrame'
+};
+
+function mountTabIframe(tabId) {
+  const frameId = TAB_IFRAME_IDS[tabId];
+  if (!frameId) return;
+  const frame = document.getElementById(frameId);
+  const src = frame?.dataset?.src;
+  if (!frame || !src || frame.getAttribute('src')) return;
+  frame.addEventListener('load', () => {
+    if (getActiveTab() === tabId) postIframeUiState();
+  }, { once: true });
+  frame.setAttribute('src', src);
+}
 
 function setMoreDropdownOpen(open) {
   const wrap = document.getElementById('tabMoreWrap');
@@ -4558,15 +4413,12 @@ function postIframeUiState() {
     isAdmin,
     isOps
   };
-  ['bunkerFrame', 'tankCleaningFrame', 'routeFrame'].forEach((id) => {
+  ['emissionsFrame', 'routeFrame', 'bunkerFrame', 'tankCleaningFrame'].forEach((id) => {
     const frame = document.getElementById(id);
-    if (frame?.contentWindow) frame.contentWindow.postMessage(payload, '*');
+    if (frame?.getAttribute('src') && frame.contentWindow) {
+      frame.contentWindow.postMessage(payload, '*');
+    }
   });
-  if (typeof bunkReceiveUiState === 'function') bunkReceiveUiState(payload);
-}
-
-function postBunkerUiState() {
-  postIframeUiState();
 }
 
 window.addEventListener('message', (e) => {
@@ -4577,6 +4429,7 @@ window.addEventListener('message', (e) => {
   }
   if (
     e.data?.type === 'arctium-bunker-ready' ||
+    e.data?.type === 'arctium-emissions-ready' ||
     e.data?.type === 'arctium-tank-cleaning-ready' ||
     e.data?.type === 'arctium-route-ready'
   ) {
@@ -4595,6 +4448,7 @@ function switchTab(id) {
     item.classList.toggle('active', item.dataset.tab === id);
   });
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === id));
+  mountTabIframe(id);
   sessionStorage.setItem(TAB_STORAGE_KEY, id);
   if (!isMorePage) closeMoreDropdown();
   if (id === 'tab-dashboard') {
@@ -4604,14 +4458,7 @@ function switchTab(id) {
   if (id === 'tab-voy') {
     wirePortAutocompleteForApp();
   }
-  if (id === 'tab-emissions') {
-    if (typeof wireEmissionsPorts === 'function') wireEmissionsPorts();
-  }
-  if (id === 'tab-bunkers') {
-    postBunkerUiState();
-    if (typeof wireBunkerPorts === 'function') wireBunkerPorts();
-  }
-  if (id === 'tab-tank-cleaning' || id === 'tab-route') {
+  if (id === 'tab-emissions' || id === 'tab-bunkers' || id === 'tab-tank-cleaning' || id === 'tab-route') {
     postIframeUiState();
   }
 }
@@ -4674,7 +4521,7 @@ function authSetUserTheme(theme) {
   authApplyThemeToDom(t);
   authPersistTheme(t);
   authUpdateThemeMenuButtons();
-  postBunkerUiState();
+  postIframeUiState();
 }
 
 function authCloseUserMenu() {
@@ -4847,7 +4694,7 @@ async function authOnLogin(user) {
   dashE2UnresolvedInit();
   const afterDataReady = () => {
     applyRoleUI();
-    if (['tab-bunkers', 'tab-tank-cleaning', 'tab-route'].includes(getActiveTab())) postIframeUiState();
+    if (['tab-emissions', 'tab-bunkers', 'tab-tank-cleaning', 'tab-route'].includes(getActiveTab())) postIframeUiState();
     livePosRefreshUI();
     void reloadDashE2UnresolvedComments();
     if (typeof twelveQuotesUpdateAdminUi === 'function') twelveQuotesUpdateAdminUi();
@@ -9715,16 +9562,5 @@ function whenDashboardTabVisible(run) {
 
 whenDashboardTabVisible(initDashboardLayout);
 </script>
-<script src="bunkers-tab.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
-<script src="route-geo-loader.js"></script>
-<script type="module">
-  import searoute, { clearFinderCache } from 'https://esm.sh/searoute-ts@2.0.0';
-  window.searoute = searoute;
-  window.clearSearouteCache = clearFinderCache;
-  window.dispatchEvent(new Event('searoute-ready'));
-</script>
-<script src="route-engine.js"></script>
-<script src="emissions-tab.js"></script>
 </body>
 </html>

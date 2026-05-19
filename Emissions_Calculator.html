@@ -6,6 +6,7 @@
 <title>Emissions Calculator — Arctium Labs</title>
 <link rel="icon" href="Favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="emissions.css">
+<link rel="stylesheet" href="port-autocomplete.css">
 <style>
 :root {
   --bg: #0d0f0e;
@@ -156,17 +157,6 @@ body.emissions-standalone {
 </style>
 <script src="ports.js"></script>
 <script src="bunkers-standalone-shared.js"></script>
-<script>
-function applyRoleUI() {
-  document.querySelectorAll('[data-admin-only]').forEach(el => { el.style.display = ''; });
-}
-document.addEventListener('input', e => {
-  if (e.target.matches('input.num-fmt')) sanitizeNumInputEl(e.target);
-}, true);
-document.addEventListener('blur', e => {
-  if (e.target.matches('input.num-fmt')) formatNumInputEl(e.target);
-}, true);
-</script>
 </head>
 <body class="emissions-standalone">
 <div id="emissions-app">
@@ -270,12 +260,26 @@ document.addEventListener('blur', e => {
 <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 <script src="route-geo-loader.js"></script>
 <script type="module">
-  import searoute, { clearFinderCache } from 'https://esm.sh/searoute-ts@2.0.0';
+  let searouteMod;
+  try {
+    searouteMod = await import('https://esm.sh/searoute-ts@2.0.0');
+  } catch (e) {
+    console.warn('[emissions] esm.sh failed, trying jsDelivr', e);
+    searouteMod = await import('https://cdn.jsdelivr.net/npm/searoute-ts@2.0.0/+esm');
+  }
+  const searoute = searouteMod.default ?? searouteMod.searoute;
+  const clearFinderCache = searouteMod.clearFinderCache;
   window.searoute = searoute;
   window.clearSearouteCache = clearFinderCache;
+  await new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'route-engine.js';
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('route-engine.js failed to load'));
+    document.head.appendChild(s);
+  });
   window.dispatchEvent(new Event('searoute-ready'));
 </script>
-<script src="route-engine.js"></script>
 <script src="arc-loading.js"></script>
 <script src="emissions-tab.js"></script>
 </body>

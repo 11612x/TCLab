@@ -459,20 +459,21 @@ function bunkCalcCounters() {
 }
 
 function bunkInitApp() {
-  const embeddedInIndex = !!document.getElementById('tab-dashboard');
+  const inIframe = window.parent !== window;
   const root = document.getElementById('bunker-app');
   if (!root || root.dataset.bunkInit === '1') return;
   root.dataset.bunkInit = '1';
 
-  if (!embeddedInIndex) {
+  if (!inIframe) {
     document.documentElement.setAttribute('data-ui-theme', 'dark');
-    document.addEventListener('input', e => {
-      if (e.target.matches('input.num-fmt')) sanitizeNumInputEl(e.target);
-    }, true);
-    document.addEventListener('blur', e => {
-      if (e.target.matches('input.num-fmt')) formatNumInputEl(e.target);
-    }, true);
   }
+
+  document.addEventListener('input', e => {
+    if (e.target.matches('input.num-fmt')) sanitizeNumInputEl(e.target);
+  }, true);
+  document.addEventListener('blur', e => {
+    if (e.target.matches('input.num-fmt')) formatNumInputEl(e.target);
+  }, true);
 
   formatAllNumInputs(root);
   wireBunkerPorts();
@@ -482,7 +483,7 @@ function bunkInitApp() {
     bunkAddSupplier();
   }
 
-  if (!embeddedInIndex && window.parent !== window) {
+  if (inIframe) {
     window.parent.postMessage({ type: 'arctium-bunker-ready' }, '*');
   }
 }

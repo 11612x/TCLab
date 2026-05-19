@@ -428,17 +428,32 @@ body {
     <div id="results-content" style="display:none"></div>
   </main>
 </div>
+<link rel="stylesheet" href="port-autocomplete.css">
 <script src="arc-loading.js"></script>
 <script src="ports.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 <script src="route-geo-loader.js"></script>
 <script type="module">
-  import searoute, { clearFinderCache } from 'https://esm.sh/searoute-ts@2.0.0';
+  let searouteMod;
+  try {
+    searouteMod = await import('https://esm.sh/searoute-ts@2.0.0');
+  } catch (e) {
+    console.warn('[route] esm.sh failed, trying jsDelivr', e);
+    searouteMod = await import('https://cdn.jsdelivr.net/npm/searoute-ts@2.0.0/+esm');
+  }
+  const searoute = searouteMod.default ?? searouteMod.searoute;
+  const clearFinderCache = searouteMod.clearFinderCache;
   window.searoute = searoute;
   window.clearSearouteCache = clearFinderCache;
+  await new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'route-engine.js';
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('route-engine.js failed to load'));
+    document.head.appendChild(s);
+  });
   window.dispatchEvent(new Event('searoute-ready'));
 </script>
-<script src="route-engine.js"></script>
 <script>
 
 
@@ -468,7 +483,14 @@ function formatPassages(passages) {
 }
 
 function isValidPort(p) {
-  return window.ArctiumRouteEngine?.isValidPort?.(p) ?? false;
+  if (window.ArctiumRouteEngine?.isValidPort?.(p)) return true;
+  if (!p) return false;
+  const lat = Number(p.lat);
+  const lon = Number(p.lon);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return false;
+  if (Math.abs(lat) < 0.01 && Math.abs(lon) < 0.01) return false;
+  if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return false;
+  return true;
 }
 
 function portLabel(p) {
@@ -769,6 +791,27 @@ function filterPorts(q) {
   return scored.slice(0, 10).map(x => x.p);
 }
 
+function positionAutocompleteList(input, list) {
+  const rect = input.getBoundingClientRect();
+  list.classList.add('port-ac-list--floating');
+  list.style.position = 'fixed';
+  list.style.left = `${rect.left}px`;
+  list.style.top = `${rect.bottom}px`;
+  list.style.width = `${Math.max(rect.width, 200)}px`;
+  list.style.right = 'auto';
+  list.style.zIndex = '25000';
+}
+
+function resetAutocompleteListPosition(list) {
+  list.classList.remove('port-ac-list--floating');
+  list.style.position = '';
+  list.style.left = '';
+  list.style.top = '';
+  list.style.width = '';
+  list.style.right = '';
+  list.style.zIndex = '';
+}
+
 function setupAutocomplete(inputId, listId, metaId, setPort, getPort) {
   const input = document.getElementById(inputId);
   const list = document.getElementById(listId);
@@ -779,6 +822,7 @@ function setupAutocomplete(inputId, listId, metaId, setPort, getPort) {
   function closeList() {
     list.innerHTML = '';
     list.classList.remove('open');
+    resetAutocompleteListPosition(list);
     activeIdx = -1;
     lastMatches = [];
   }
@@ -788,6 +832,7 @@ function setupAutocomplete(inputId, listId, metaId, setPort, getPort) {
     list.innerHTML = '';
     if (!matches.length) {
       list.innerHTML = '<div class="autocomplete-empty">No ports found</div>';
+      positionAutocompleteList(input, list);
       list.classList.add('open');
       return;
     }
@@ -801,6 +846,7 @@ function setupAutocomplete(inputId, listId, metaId, setPort, getPort) {
       });
       list.appendChild(div);
     });
+    positionAutocompleteList(input, list);
     list.classList.add('open');
     activeIdx = -1;
   }
@@ -1076,32 +1122,61 @@ loadPorts();
 renderRoutePortFields();
 
 async function initRouteCalculator() {
-  const engine = window.ArctiumRouteEngine;
   const btn = document.getElementById('run-btn');
-  if (!engine) {
-    btn.disabled = true;
-    btn.textContent = 'Routing engine unavailable';
-    showError('Route engine scripts failed to load. Refresh the page.');
-    return;
-  }
+  const engine = window.ArctiumRouteEngine;
+  if (!engine) return false;
+  btn.disabled = true;
+  btn.textContent = 'Loading geo…';
   const ok = await engine.ready;
   console.log(`[route-calculator] engine ready: ${ok}, geo: ${window.ArctiumGeo?.isReady?.()}`);
   console.log(`[ports] Loaded ${PORTS.length} valid ports`);
   if (!ok || !engine.isReady()) {
     btn.disabled = true;
     btn.textContent = 'Geo / routing unavailable';
-    showError(window.ArctiumGeo?.error || 'Maritime geo layers or routing engine failed to load. Refresh the page.');
-    return;
+    const geoErr = window.ArctiumGeo?.error;
+    showError(geoErr || 'Maritime geo layers or routing engine failed to load. Refresh the page.');
+    return false;
   }
   btn.disabled = false;
   btn.textContent = 'Calculate Route';
+  clearError();
+  return true;
 }
 
-initRouteCalculator();
-
-if (window.parent !== window) {
-  window.parent.postMessage({ type: 'arctium-route-ready' }, '*');
+async function bootRouteCalculator() {
+  if (!window.ArctiumRouteEngine) {
+    const btn = document.getElementById('run-btn');
+    btn.disabled = true;
+    btn.textContent = 'Routing engine unavailable';
+    showError('Route engine scripts failed to load. Refresh the page.');
+    return;
+  }
+  await initRouteCalculator();
+  if (window.parent !== window) {
+    window.parent.postMessage({ type: 'arctium-route-ready' }, '*');
+  }
 }
+
+function startRouteBoot() {
+  if (window.ArctiumRouteEngine) {
+    void bootRouteCalculator();
+    return;
+  }
+  const tryBoot = () => {
+    if (window.ArctiumRouteEngine) void bootRouteCalculator();
+  };
+  window.addEventListener('searoute-ready', tryBoot, { once: true });
+  const poll = setInterval(() => {
+    if (window.ArctiumRouteEngine) {
+      clearInterval(poll);
+      void bootRouteCalculator();
+    }
+  }, 50);
+  setTimeout(() => clearInterval(poll), 120000);
+}
+
+startRouteBoot();
+window.addEventListener('arctium-geo-ready', () => void initRouteCalculator());
 </script>
 </body>
 </html>

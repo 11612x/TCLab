@@ -7,7 +7,10 @@
 
   function waitForGeo() {
     const geo = window.ArctiumGeo;
-    if (geo?.isReady?.()) return Promise.resolve(true);
+    if (geo?.isReady?.()) {
+      geoReady = true;
+      return Promise.resolve(true);
+    }
     if (geo?.ready) {
       return geo.ready.then((ok) => {
         geoReady = !!ok;
@@ -30,12 +33,21 @@
       return Promise.resolve(true);
     }
     return new Promise((resolve) => {
+      let settled = false;
       const finish = () => {
+        if (settled) return;
+        settled = true;
         routeEngineReady = typeof window.searoute === 'function';
         resolve(routeEngineReady);
       };
       window.addEventListener('searoute-ready', finish, { once: true });
-      setTimeout(finish, 60000);
+      const poll = setInterval(() => {
+        if (typeof window.searoute === 'function') finish();
+      }, 50);
+      setTimeout(() => {
+        clearInterval(poll);
+        finish();
+      }, 120000);
     });
   }
 
@@ -382,7 +394,7 @@
 
   window.ArctiumRouteEngine = {
     ready,
-    isReady: () => routeEngineReady && geoReady,
+    isReady: () => typeof window.searoute === 'function' && !!window.ArctiumGeo?.isReady?.(),
     calculateLegRoute,
     calculateMultiLegRoute,
     computeSeaFuelMT,

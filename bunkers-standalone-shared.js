@@ -206,6 +206,27 @@ function portCatalogMatchesSelection(p, inputVal) {
   return portCatalogSearchKeys(p).has(inputVal.trim().toLowerCase());
 }
 
+function positionPortDropdownList(input, list) {
+  const rect = input.getBoundingClientRect();
+  list.classList.add('port-ac-list--floating');
+  list.style.position = 'fixed';
+  list.style.left = `${rect.left}px`;
+  list.style.top = `${rect.bottom}px`;
+  list.style.width = `${Math.max(rect.width, 200)}px`;
+  list.style.right = 'auto';
+  list.style.zIndex = '25000';
+}
+
+function resetPortDropdownListPosition(list) {
+  list.classList.remove('port-ac-list--floating');
+  list.style.position = '';
+  list.style.left = '';
+  list.style.top = '';
+  list.style.width = '';
+  list.style.right = '';
+  list.style.zIndex = '';
+}
+
 function ensureRoutePortChrome(wrap, input) {
   let meta = wrap.querySelector(':scope > .port-meta');
   if (!meta) {
@@ -238,6 +259,7 @@ function bindRoutePortAutocomplete(input) {
 
   function closeList() {
     list.classList.remove('open');
+    resetPortDropdownListPosition(list);
     list.innerHTML = '';
     activeIdx = -1;
     lastMatches = [];
@@ -270,6 +292,7 @@ function bindRoutePortAutocomplete(input) {
     list.innerHTML = '';
     if (!matches.length) {
       list.innerHTML = '<div class="route-port-empty">No ports found</div>';
+      positionPortDropdownList(input, list);
       list.classList.add('open');
       return;
     }
@@ -283,6 +306,7 @@ function bindRoutePortAutocomplete(input) {
       });
       list.appendChild(div);
     });
+    positionPortDropdownList(input, list);
     list.classList.add('open');
     activeIdx = -1;
   }

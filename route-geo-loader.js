@@ -166,8 +166,28 @@
     return { zones, features };
   }
 
-  async function fetchGeoJson(url) {
-    const res = await fetch(url);
+  function geoAssetBase() {
+    const scripts = document.getElementsByTagName('script');
+    for (let i = scripts.length - 1; i >= 0; i--) {
+      const src = scripts[i].src;
+      if (src && /route-geo-loader\.js(?:\?|$)/.test(src)) {
+        return new URL('.', src).href;
+      }
+    }
+    return new URL('./', document.baseURI || window.location.href).href;
+  }
+
+  async function fetchGeoJson(file) {
+    const url = new URL(file, geoAssetBase()).href;
+    let res;
+    try {
+      res = await fetch(url);
+    } catch (e) {
+      const hint = window.location.protocol === 'file:'
+        ? ' Serve the app over HTTP (e.g. python3 -m http.server), not file://.'
+        : '';
+      throw new Error(`NetworkError loading ${file}${hint} (${e.message || e})`);
+    }
     if (!res.ok) throw new Error(`${url}: ${res.status} ${res.statusText}`);
     return normalizeAntimeridian(await res.json());
   }
@@ -235,6 +255,7 @@
       loadError = e.message || String(e);
       api.error = loadError;
       console.error('[arctium-geo] load failed:', e);
+      window.dispatchEvent(new Event('arctium-geo-ready'));
       return false;
     }
   })();

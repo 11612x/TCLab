@@ -1,4 +1,26 @@
-/* Emissions tab — loaded after index.html main script */
+/* Emissions tab — shared with Emissions_Calculator.html */
+
+let emIsAdmin = false;
+let emIsOps = false;
+
+function emApplyRoleUI() {
+  const root = document.getElementById('emissions-app');
+  if (!root) return;
+  root.querySelectorAll('[data-admin-only]').forEach(el => {
+    el.style.display = emIsAdmin ? '' : 'none';
+  });
+  root.querySelectorAll('[data-admin-or-ops]').forEach(el => {
+    el.style.display = (emIsAdmin || emIsOps) ? '' : 'none';
+  });
+}
+
+function emReceiveUiState(data) {
+  if (!data || data.type !== 'arctium-ui') return;
+  document.documentElement.setAttribute('data-ui-theme', data.theme === 'light' ? 'light' : 'dark');
+  emIsAdmin = !!data.isAdmin;
+  emIsOps = !!data.isOps;
+  emApplyRoleUI();
+}
 
 function initEmissionsPortAutocomplete() {
   ['em-pol', 'em-pod'].forEach(id => {
@@ -662,15 +684,32 @@ function emRenderResults(data) {
 }
 
 function emInitApp() {
+  const inIframe = window.parent !== window;
   const root = document.getElementById('emissions-app');
   if (!root || root.dataset.emInit === '1') return;
   root.dataset.emInit = '1';
+
+  if (!inIframe) {
+    document.documentElement.setAttribute('data-ui-theme', 'dark');
+  }
+
+  document.addEventListener('input', e => {
+    if (e.target.matches('input.num-fmt')) sanitizeNumInputEl(e.target);
+  }, true);
+  document.addEventListener('blur', e => {
+    if (e.target.matches('input.num-fmt')) formatNumInputEl(e.target);
+  }, true);
+
   wireEmissionsPorts();
   if (!emFuelRows.length) {
     emAddFuelRow({ fuel: 'VLSFO' });
     emAddFuelRow({ fuel: 'LSMGO' });
   }
   emInitComplianceYear();
+
+  if (inIframe) {
+    window.parent.postMessage({ type: 'arctium-emissions-ready' }, '*');
+  }
 }
 
 if (document.readyState === 'loading') {
@@ -678,3 +717,5 @@ if (document.readyState === 'loading') {
 } else {
   emInitApp();
 }
+
+window.addEventListener('message', e => emReceiveUiState(e.data));
