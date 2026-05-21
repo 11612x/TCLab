@@ -4230,14 +4230,18 @@ function schedulePersistVoyageChains() {
 }
 
 async function upsertAppData(key, value) {
-  if (!currentUser) return;
+  if (!currentUser) return { message: 'Not signed in' };
   const row = {
     key,
     value,
     updated_at: new Date().toISOString(),
   };
   const { error } = await sb.from('app_data').upsert(row, { onConflict: 'key' });
-  if (error) console.warn('app_data upsert', key, error);
+  if (error) {
+    console.warn('app_data upsert', key, error);
+    return error;
+  }
+  return null;
 }
 
 async function loadAppDataJson(key) {
@@ -4272,6 +4276,7 @@ async function loadAllData() {
 
 async function loadVesselPositions() {
   const v = await loadAppDataJson(APP_DATA_KEYS.vessel_positions);
+  const rawRowCount = Array.isArray(v?.rows) ? v.rows.length : 0;
   livePosStored = v && typeof v === 'object' && Array.isArray(v.rows) ? livePosNormalizeStoredPayload(v) : null;
   livePosTableEditMode = false;
   livePosSortReset(
@@ -4280,6 +4285,9 @@ async function loadVesselPositions() {
       : null
   );
   livePosRender();
+  if (currentUser && livePosStored && rawRowCount > livePosStored.rows.length) {
+    await upsertAppData(APP_DATA_KEYS.vessel_positions, livePosStored);
+  }
 }
 
 async function saveVesselPositionsPayload(payload) {
@@ -4290,7 +4298,7 @@ async function saveVesselPositionsPayload(payload) {
       : null
   );
   livePosRender();
-  await upsertAppData(APP_DATA_KEYS.vessel_positions, livePosStored);
+  return upsertAppData(APP_DATA_KEYS.vessel_positions, livePosStored);
 }
 
 function scheduleLivePosEtaPersist() {
@@ -5044,8 +5052,23 @@ function livePosEtaOpenIsUrgent(charterTypeStr, daysUntil) {
   return false;
 }
 
+function livePosDedupeRowsByVessel(rows, shipKey) {
+  const map = new Map();
+  for (const row of rows) {
+    const nm = livePosNorm(String(row[shipKey] ?? row.Vessel ?? ''));
+    if (!nm) continue;
+    map.set(nm, row);
+  }
+  return [...map.values()];
+}
+
 function livePosNormalizeStoredPayload(data) {
   if (!data || !Array.isArray(data.rows)) return data;
+  const shipKey = livePosFindShipColumnKey(
+    data.headers?.length ? data.headers : Object.keys(data.rows[0] || {})
+  );
+  const deduped = livePosDedupeRowsByVessel(data.rows, shipKey);
+  if (deduped.length !== data.rows.length) data.rows = deduped;
   const eta = LIVE_POS_ETA_OPEN_COLUMN;
   data.rows.forEach(r => {
     if (r[eta] === undefined || r[eta] === '—') r[eta] = '';
@@ -5140,9 +5163,34 @@ function livePosExcelSerialToDate(serial) {
 }
 
 function livePosIsDateLikeCell(v) {
-  if (v instanceof Date && !isNaN(+v)) return true;
-  if (typeof v === 'number' && v > 35000 && v < 65000) return true;
-  return false;
+  return livePosKplerDateCellToMs(v) != null;
+}
+
+/** Column B "as of" date on a KPLER block header row. */
+function livePosKplerDateCellToMs(v) {
+  if (v === null || v === undefined || v === '') return null;
+  if (v instanceof Date && !isNaN(+v)) return livePosCalendarMidnightMs(v);
+  if (typeof v === 'number' && v > 35000 && v < 65000) {
+    const d = livePosExcelSerialToDate(v);
+    return isNaN(+d) ? null : livePosCalendarMidnightMs(d);
+  }
+  const s = String(v).trim();
+  if (!s) return null;
+  const parsed = Date.parse(s);
+  if (!isNaN(parsed)) return livePosCalendarMidnightMs(new Date(parsed));
+  const slash2 = s.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2})$/);
+  if (slash2) {
+    let y = +slash2[3];
+    if (y < 100) y += 2000;
+    const d = new Date(y, +slash2[2] - 1, +slash2[1]);
+    return isNaN(+d) ? null : livePosCalendarMidnightMs(d);
+  }
+  const slash4 = s.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/);
+  if (slash4) {
+    const d = new Date(+slash4[3], +slash4[2] - 1, +slash4[1]);
+    return isNaN(+d) ? null : livePosCalendarMidnightMs(d);
+  }
+  return null;
 }
 
 function livePosFmtKplerCell(v) {
@@ -5174,7 +5222,7 @@ function livePosIsKplerBlockHeaderRow(row) {
   if (typeof c !== 'string' && typeof c !== 'number') return false;
   const name = String(c).trim();
   if (!name) return false;
-  return livePosIsDateLikeCell(row[1]);
+  return livePosKplerDateCellToMs(row[1]) != null;
 }
 
 function livePosParseKplerBlockAt(aoa, startIdx) {
@@ -5217,20 +5265,42 @@ function livePosParseKplerBlockAt(aoa, startIdx) {
   return { rows, nextIndex: j };
 }
 
-function livePosParseKplerAoa(aoa) {
-  const out = [];
-  let i = 0;
-  while (i < aoa.length) {
-    if (!livePosIsKplerBlockHeaderRow(aoa[i])) {
-      i += 1;
-      continue;
+function livePosFindKplerBlockHeaderIndices(aoa) {
+  const blocks = [];
+  for (let i = 0; i < aoa.length; i++) {
+    if (livePosIsKplerBlockHeaderRow(aoa[i])) {
+      blocks.push({ i, asOfMs: livePosKplerDateCellToMs(aoa[i][1]) });
     }
-    const { rows, nextIndex } = livePosParseKplerBlockAt(aoa, i);
-    out.push(...rows);
-    i = nextIndex;
   }
-  if (!out.length) return { error: 'No vessel blocks found on the KPLER sheet.' };
-  return { rows: out, headers: LIVE_POS_KPLER_COLUMN_ORDER.slice() };
+  return blocks;
+}
+
+function livePosPickLatestKplerBlock(blocks) {
+  let pick = blocks[0];
+  for (let b = 1; b < blocks.length; b++) {
+    const cur = blocks[b];
+    const curMs = cur.asOfMs ?? -Infinity;
+    const pickMs = pick.asOfMs ?? -Infinity;
+    if (curMs > pickMs) pick = cur;
+    else if (curMs === pickMs && cur.i > pick.i) pick = cur;
+  }
+  return pick;
+}
+
+/** Daily upload uses only the newest dated block; older blocks on the sheet are ignored. */
+function livePosParseKplerAoa(aoa) {
+  const blocks = livePosFindKplerBlockHeaderIndices(aoa);
+  if (!blocks.length) return { error: 'No vessel blocks found on the KPLER sheet.' };
+  const latest = livePosPickLatestKplerBlock(blocks);
+  const { rows } = livePosParseKplerBlockAt(aoa, latest.i);
+  if (!rows.length) return { error: 'No vessels found in the latest position block on the KPLER sheet.' };
+  const asOfMs = latest.asOfMs;
+  return {
+    rows,
+    headers: LIVE_POS_KPLER_COLUMN_ORDER.slice(),
+    asOf: asOfMs != null ? asOfMs : undefined,
+    kplerBlockCount: blocks.length,
+  };
 }
 
 function livePosParseKplerWorkbook(wb) {
@@ -5299,7 +5369,12 @@ async function livePosTableSaveFromDom() {
   }
   livePosClearError();
   livePosTableEditMode = false;
-  await livePosSave({ ...data, rows: data.rows });
+  const saveErr = await livePosSave({ ...data, rows: data.rows });
+  if (saveErr) {
+    livePosShowError(
+      `Could not save to Supabase: ${saveErr.message || saveErr.hint || 'check permissions on app_data'}.`
+    );
+  }
 }
 
 function livePosOnTableEditBtnClick() {
@@ -5318,7 +5393,7 @@ function livePosLoad() {
 }
 
 async function livePosSave(payload) {
-  await saveVesselPositionsPayload(payload);
+  return saveVesselPositionsPayload(payload);
 }
 
 function livePosFindShipColumnKey(keys) {
@@ -5389,14 +5464,20 @@ function livePosHandleFile(file) {
       }
       livePosMergeEtaOpenFromPrevious(parsed.rows, livePosStored);
       livePosTableEditMode = false;
-      await livePosSave({
+      const saveErr = await livePosSave({
         format: 'kpler',
         updatedAt: Date.now(),
+        asOf: parsed.asOf,
         uploadedBy: currentUser?.email,
         sheetName: LIVE_POS_KPLER_SHEET,
         headers: parsed.headers,
         rows: parsed.rows,
       });
+      if (saveErr) {
+        livePosShowError(
+          `Could not save to Supabase: ${saveErr.message || saveErr.hint || 'check admin permissions on app_data'}.`
+        );
+      }
     } catch {
       livePosShowError('Could not read that file. Use the standard .xlsx export.');
     }
@@ -5467,9 +5548,10 @@ function livePosRender() {
 
   if (metaEl) {
     if (data && livePosCanEdit()) {
-      metaEl.textContent = data.updatedAt
-        ? `Last upload: ${livePosFmtTime(data.updatedAt)}`
-        : '';
+      const parts = [];
+      if (data.updatedAt) parts.push(`Last upload: ${livePosFmtTime(data.updatedAt)}`);
+      if (data.asOf) parts.push(`List as of ${livePosFmtTime(data.asOf)}`);
+      metaEl.textContent = parts.join(' · ');
     } else {
       metaEl.textContent = '';
     }
