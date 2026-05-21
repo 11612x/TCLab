@@ -1,6 +1,12 @@
 /* Shared maritime route + ECA distance engine (searoute-ts + 2km network + turf) */
 (function () {
   const ECA_SUBDIVIDE_NM = 25;
+  /** Commercial shipping — no Arctic / North Pole corridors. */
+  const MAX_ROUTE_LAT_N = 70;
+  const MIN_ROUTE_LAT_S = -60;
+  const ARCTIC_PASSAGE_RESTRICTIONS = ['northwest', 'northeast'];
+  const NETWORK_ANNOTATION_VERSION = 2;
+
   let routeEngineReady = false;
   let geoReady = false;
   let ecaPolygons = null;
@@ -83,6 +89,18 @@
           message: `Waypoint ${i + 1} is outside the 2 km waterway network.`,
         };
       }
+      if (lat > MAX_ROUTE_LAT_N) {
+        return {
+          valid: false,
+          message: `Waypoint ${i + 1} is above ${MAX_ROUTE_LAT_N}°N — Arctic routing is not allowed.`,
+        };
+      }
+      if (lat < MIN_ROUTE_LAT_S) {
+        return {
+          valid: false,
+          message: `Waypoint ${i + 1} is below ${MIN_ROUTE_LAT_S}°S.`,
+        };
+      }
     }
     return { valid: true };
   }
@@ -153,6 +171,230 @@
     return haversineNM(from[1], from[0], to[1], to[0]);
   }
 
+  /** Passage bboxes for gate checks (aligned with searoute-ts). [minLon, minLat, maxLon, maxLat] */
+  const PASSAGE_BBOXES = {
+    suez: [[32.0, 29.5, 32.9, 31.5]],
+    panama: [[-80.2, 8.85, -79.3, 9.45]],
+    babelmandeb: [[42.9, 12.3, 43.6, 13.0]],
+    gibraltar: [[-5.95, 35.7, -5.2, 36.2]],
+    malacca: [[99.0, 1.0, 104.0, 6.0]],
+    northwest: [[-130.0, 66.0, -60.0, 80.0]],
+    northeast: [[30.0, 68.0, 180.0, 82.0]],
+  };
+
+  const ROUTE_RESTRICTION_VARIANTS = [
+    [],
+    ['suez', 'babelmandeb'],
+    ['panama'],
+    ['suez', 'babelmandeb', 'panama'],
+    ['malacca'],
+    ['gibraltar'],
+    ['panama', 'malacca'],
+  ];
+
+  let networkPassagesAnnotated = false;
+
+  function pointInBbox(lon, lat, bbox) {
+    return lon >= bbox[0] && lon <= bbox[2] && lat >= bbox[1] && lat <= bbox[3];
+  }
+
+  function edgeIntersectsBboxes(a, b, bboxes) {
+    const steps = 5;
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const lon = a[0] + (b[0] - a[0]) * t;
+      const lat = a[1] + (b[1] - a[1]) * t;
+      for (const bb of bboxes) {
+        if (pointInBbox(lon, lat, bb)) return true;
+      }
+    }
+    return false;
+  }
+
+  /** 2km.geojson has no `pass` tags — annotate once so restrictions (canals + Arctic) apply. */
+  function prepareRoutingNetwork(network) {
+    if (!network?.features?.length) return network;
+    if (network.__arctiumAnnotationVersion === NETWORK_ANNOTATION_VERSION) return network;
+
+    for (const feature of network.features) {
+      const geom = feature.geometry;
+      if (!geom || geom.type !== 'LineString' || !geom.coordinates?.length) continue;
+      const coords = geom.coordinates;
+      let tagged = false;
+
+      for (const c of coords) {
+        const lat = Number(c[1]);
+        if (Number.isFinite(lat) && lat > MAX_ROUTE_LAT_N) {
+          feature.properties = feature.properties || {};
+          feature.properties.pass = 'northwest';
+          tagged = true;
+          break;
+        }
+      }
+
+      if (!tagged) {
+        for (const passage of Object.keys(PASSAGE_BBOXES)) {
+          const bboxes = PASSAGE_BBOXES[passage];
+          for (let i = 0; i < coords.length - 1; i++) {
+            if (edgeIntersectsBboxes(coords[i], coords[i + 1], bboxes)) {
+              feature.properties = feature.properties || {};
+              feature.properties.pass = passage;
+              tagged = true;
+              break;
+            }
+          }
+          if (tagged) break;
+        }
+      }
+    }
+
+    network.__arctiumAnnotationVersion = NETWORK_ANNOTATION_VERSION;
+    if (!networkPassagesAnnotated) {
+      networkPassagesAnnotated = true;
+      if (typeof window.clearSearouteCache === 'function') window.clearSearouteCache();
+    }
+    return network;
+  }
+
+  function latitudeGateError(waypoints) {
+    if (!waypoints?.length) return null;
+    for (let i = 0; i < waypoints.length; i++) {
+      const lat = Number(waypoints[i][1]);
+      if (!Number.isFinite(lat)) continue;
+      if (lat > MAX_ROUTE_LAT_N) {
+        return `Route cannot go above ${MAX_ROUTE_LAT_N}°N (Arctic and polar routes are excluded).`;
+      }
+      if (lat < MIN_ROUTE_LAT_S) {
+        return `Route cannot go below ${MIN_ROUTE_LAT_S}°S.`;
+      }
+    }
+    return null;
+  }
+
+  function passagesAlongWaypoints(waypoints) {
+    const hit = new Set();
+    for (const c of waypoints) {
+      const lon = Number(c[0]);
+      const lat = Number(c[1]);
+      if (!Number.isFinite(lon) || !Number.isFinite(lat)) continue;
+      for (const name of Object.keys(PASSAGE_BBOXES)) {
+        if (hit.has(name)) continue;
+        if (PASSAGE_BBOXES[name].some(bb => pointInBbox(lon, lat, bb))) hit.add(name);
+      }
+    }
+    return [...hit];
+  }
+
+  function passagesHas(passages, name) {
+    return Array.isArray(passages) && passages.includes(name);
+  }
+
+  /** Mandatory gates: Use = must transit canal; Avoid = must not transit. */
+  function canalGateError(passages, useSuez, usePanama) {
+    if (useSuez && !passagesHas(passages, 'suez')) {
+      return 'Route must transit Suez Canal (Use selected).';
+    }
+    if (!useSuez && passagesHas(passages, 'suez')) {
+      return 'Route must not transit Suez Canal (Avoid selected).';
+    }
+    if (usePanama && !passagesHas(passages, 'panama')) {
+      return 'Route must transit Panama Canal (Use selected).';
+    }
+    if (!usePanama && passagesHas(passages, 'panama')) {
+      return 'Route must not transit Panama Canal (Avoid selected).';
+    }
+    return null;
+  }
+
+  function mergeRestrictions(...lists) {
+    return [...new Set(lists.flat())];
+  }
+
+  function invokeSearoute(from, to, restrictions, network) {
+    const allRestrictions = mergeRestrictions(ARCTIC_PASSAGE_RESTRICTIONS, restrictions);
+    const options = {
+      units: 'nauticalmiles',
+      returnPassages: true,
+      allowArctic: false,
+      network,
+      restrictions: allRestrictions,
+    };
+    return window.searoute(from, to, options);
+  }
+
+  function legFromSearouteResult(result, from, to) {
+    let coords = result?.geometry?.coordinates;
+    coords = constrainWaypoints(coords);
+    const check = validateWaypoints(coords);
+    if (!check.valid) return { error: check.message };
+    const routeNM = waypointsLengthNM(coords);
+    if (!Number.isFinite(routeNM) || routeNM < 1) {
+      return { error: 'Route length invalid after waterway constraint — verify port coordinates.' };
+    }
+    const latErr = latitudeGateError(coords);
+    if (latErr) return { error: latErr };
+
+    const passages = passagesAlongWaypoints(coords);
+    return {
+      waypoints: coords,
+      routeNM,
+      greatCircleNM: greatCircleNMForDirectLine(from, to),
+      passages,
+    };
+  }
+
+  function collectRouteCandidates(from, to, network, useSuez, usePanama) {
+    const candidates = [];
+    const seen = new Set();
+
+    function addCandidate(result) {
+      const leg = legFromSearouteResult(result, from, to);
+      if (leg.error) return;
+      const key = leg.waypoints.map(c => `${c[0].toFixed(3)},${c[1].toFixed(3)}`).join('|');
+      if (seen.has(key)) return;
+      seen.add(key);
+      candidates.push(leg);
+    }
+
+    const restrictionSets = new Set();
+    restrictionSets.add(JSON.stringify([]));
+    if (!useSuez) restrictionSets.add(JSON.stringify(['suez', 'babelmandeb']));
+    if (!usePanama) restrictionSets.add(JSON.stringify(['panama']));
+    if (!useSuez && !usePanama) restrictionSets.add(JSON.stringify(['suez', 'babelmandeb', 'panama']));
+    for (const extra of ROUTE_RESTRICTION_VARIANTS) {
+      restrictionSets.add(JSON.stringify(extra));
+      if (!useSuez) restrictionSets.add(JSON.stringify(mergeRestrictions(extra, ['suez', 'babelmandeb'])));
+      if (!usePanama) restrictionSets.add(JSON.stringify(mergeRestrictions(extra, ['panama'])));
+    }
+
+    for (const key of restrictionSets) {
+      const restrictions = JSON.parse(key);
+      try {
+        addCandidate(invokeSearoute(from, to, restrictions, network));
+      } catch (_) {}
+    }
+
+    const altFn = window.searouteAlternatives;
+    if (typeof altFn === 'function') {
+      try {
+        const alts = altFn(from, to, {
+          units: 'nauticalmiles',
+          returnPassages: true,
+          allowArctic: false,
+          restrictions: ARCTIC_PASSAGE_RESTRICTIONS,
+          network,
+          k: 12,
+          similarityThreshold: 0.005,
+        });
+        for (const alt of alts) addCandidate(alt);
+      } catch (e) {
+        console.warn('[route-engine] searouteAlternatives failed', e);
+      }
+    }
+
+    return candidates;
+  }
+
   function buildRoute(from, to, { suez = true, panama = true } = {}) {
     if (!routeEngineReady || typeof window.searoute !== 'function') {
       return { error: 'Routing engine not loaded.' };
@@ -161,38 +403,34 @@
       return { error: 'Maritime geo layers not loaded (2km waterways / landmass / ECA).' };
     }
 
-    const network = window.ArctiumGeo?.getWaterwaysNetwork?.();
-    if (!network?.features?.length) {
+    const rawNetwork = window.ArctiumGeo?.getWaterwaysNetwork?.();
+    if (!rawNetwork?.features?.length) {
       return { error: '2 km waterway network not available.' };
     }
 
-    const restrictions = [];
-    if (!suez) restrictions.push('suez');
-    if (!panama) restrictions.push('panama');
-
-    const options = {
-      units: 'nauticalmiles',
-      returnPassages: true,
-      network,
-    };
-    if (restrictions.length) options.restrictions = restrictions;
+    const network = prepareRoutingNetwork(rawNetwork);
+    const useSuez = !!suez;
+    const usePanama = !!panama;
 
     try {
-      const result = window.searoute(from, to, options);
-      let coords = result?.geometry?.coordinates;
-      coords = constrainWaypoints(coords);
-      const check = validateWaypoints(coords);
-      if (!check.valid) return { error: check.message };
-      const routeNM = waypointsLengthNM(coords);
-      if (!Number.isFinite(routeNM) || routeNM < 1) {
-        return { error: 'Route length invalid after waterway constraint — verify port coordinates.' };
+      const candidates = collectRouteCandidates(from, to, network, useSuez, usePanama);
+      const valid = candidates.filter(leg => {
+        if (latitudeGateError(leg.waypoints)) return false;
+        return !canalGateError(leg.passages, useSuez, usePanama);
+      });
+
+      if (valid.length) {
+        valid.sort((a, b) => a.routeNM - b.routeNM);
+        return valid[0];
       }
-      const greatCircleNM = greatCircleNMForDirectLine(from, to);
+
+      const errors = [];
+      if (useSuez) errors.push('via Suez');
+      if (!useSuez) errors.push('avoiding Suez');
+      if (usePanama) errors.push('via Panama');
+      if (!usePanama) errors.push('avoiding Panama');
       return {
-        waypoints: coords,
-        routeNM,
-        greatCircleNM,
-        passages: result.properties?.passages || [],
+        error: `No route found ${errors.join(' and ')} for this voyage.`,
       };
     } catch (e) {
       console.warn('searoute failed', from, to, e);
@@ -265,6 +503,7 @@
         zonesHit: eca.zonesHit,
         passages: leg.passages,
         greatCircleNM: leg.greatCircleNM ?? null,
+        waypoints: leg.waypoints,
       };
     } catch (e) {
       return { error: 'ECA analysis failed: ' + (e.message || 'unknown error') };
@@ -395,6 +634,8 @@
   window.ArctiumRouteEngine = {
     ready,
     isReady: () => typeof window.searoute === 'function' && !!window.ArctiumGeo?.isReady?.(),
+    MAX_ROUTE_LAT_N,
+    MIN_ROUTE_LAT_S,
     calculateLegRoute,
     calculateMultiLegRoute,
     computeSeaFuelMT,

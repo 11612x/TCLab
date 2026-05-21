@@ -90,6 +90,118 @@ const FUELEU_GHGI = {
 };
 let emFuelId = 0;
 let emFuelRows = [];
+let emRouteMap = null;
+let emRouteMapLayers = null;
+let emSuezToggle = 'use';
+let emPanamaToggle = 'use';
+
+function emSetupToggle(groupId, setter) {
+  const group = document.getElementById(groupId);
+  if (!group) return;
+  group.querySelectorAll('.toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      group.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      setter(btn.dataset.value);
+    });
+  });
+}
+
+function emSetToggleUi(groupId, value) {
+  const group = document.getElementById(groupId);
+  if (!group) return;
+  group.querySelectorAll('.toggle-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.value === value);
+  });
+}
+
+function emGetCanalOpts() {
+  return {
+    suez: emSuezToggle === 'use',
+    panama: emPanamaToggle === 'use',
+  };
+}
+
+function emPortName(port) {
+  return port?.name || port?.port_name_full || port?.value || 'Port';
+}
+
+function emDestroyRouteMap() {
+  if (emRouteMap) {
+    emRouteMap.remove();
+    emRouteMap = null;
+    emRouteMapLayers = null;
+  }
+}
+
+function emRenderRouteMap(container, routeMap) {
+  if (!routeMap?.waypoints?.length || typeof L === 'undefined') return;
+
+  const pol = routeMap.pol;
+  const pod = routeMap.pod;
+  const waypoints = routeMap.waypoints;
+  const latlngs = waypoints.map(c => [c[1], c[0]]);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'card em-route-map-card';
+  const polLabel = emPortName(pol);
+  const podLabel = emPortName(pod);
+  const distLabel = routeMap.totalNM != null ? emFmtNM(routeMap.totalNM) : '';
+  wrap.innerHTML = `
+    <div class="section-title">Voyage Route</div>
+    <div class="em-route-map" id="em-route-map"></div>
+    <div class="em-route-map-caption">${polLabel} → ${podLabel}${distLabel ? ' · ' + distLabel : ''}</div>
+  `;
+  container.appendChild(wrap);
+
+  emDestroyRouteMap();
+
+  const mapEl = document.getElementById('em-route-map');
+  if (!mapEl) return;
+
+  const maxLat = window.ArctiumRouteEngine?.MAX_ROUTE_LAT_N ?? 70;
+  const minLat = window.ArctiumRouteEngine?.MIN_ROUTE_LAT_S ?? -60;
+  emRouteMap = L.map(mapEl, {
+    zoomControl: true,
+    maxBounds: [[minLat, -180], [maxLat, 180]],
+    maxBoundsViscosity: 1,
+  });
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    referrerPolicy: 'strict-origin-when-cross-origin',
+  }).addTo(emRouteMap);
+
+  emRouteMapLayers = L.layerGroup().addTo(emRouteMap);
+
+  L.polyline(latlngs, {
+    color: '#78b8a8',
+    weight: 2.5,
+    opacity: 0.9,
+  }).addTo(emRouteMapLayers);
+
+  const markerOpts = { radius: 6, weight: 2, fillOpacity: 0.9 };
+  if (pol && Number.isFinite(Number(pol.lat)) && Number.isFinite(Number(pol.lon))) {
+    const from = [Number(pol.lat), Number(pol.lon)];
+    L.circleMarker(from, { ...markerOpts, color: '#9ab89a', fillColor: '#6a8a6a' })
+      .bindTooltip(polLabel, { direction: 'top', offset: [0, -6] })
+      .addTo(emRouteMapLayers);
+  }
+  if (pod && Number.isFinite(Number(pod.lat)) && Number.isFinite(Number(pod.lon))) {
+    const to = [Number(pod.lat), Number(pod.lon)];
+    L.circleMarker(to, { ...markerOpts, color: '#b8a89a', fillColor: '#8a7a6a' })
+      .bindTooltip(podLabel, { direction: 'top', offset: [0, -6] })
+      .addTo(emRouteMapLayers);
+  }
+
+  const bounds = L.latLngBounds(latlngs);
+  emRouteMap.fitBounds(bounds, { padding: [28, 28], maxZoom: 8 });
+
+  requestAnimationFrame(() => {
+    emRouteMap?.invalidateSize();
+    emRouteMap?.fitBounds(bounds, { padding: [28, 28], maxZoom: 8 });
+  });
+}
 
 function getFuelEULimit(year) {
   const base = 91.16;
@@ -200,6 +312,7 @@ function emNextFuelType() {
 }
 
 function emShowEmptyState() {
+  emDestroyRouteMap();
   const el = document.getElementById('emissionsResults');
   if (!el) return;
   el.innerHTML = `
@@ -211,9 +324,31 @@ function emShowEmptyState() {
 }
 
 function emShowWarning(message) {
+  emDestroyRouteMap();
   const el = document.getElementById('emissionsResults');
   if (!el) return;
   el.innerHTML = `<div class="em-warning">${message}</div>`;
+}
+
+function emGeoLoadHint() {
+  if (window.location.protocol !== 'file:') return '';
+  return ' Run the app over HTTP: double-click <strong>serve.bat</strong> in the project folder, or <code>python -m http.server 8080</code>, then open <code>http://127.0.0.1:8080/</code>.';
+}
+
+function emShowGeoLoadError() {
+  const geoErr = window.ArctiumGeo?.error;
+  const msg = geoErr
+    ? `${geoErr}.${emGeoLoadHint()}`
+    : `Maritime geo layers failed to load.${emGeoLoadHint()}`;
+  emShowWarning(msg);
+}
+
+async function emEnsureGeoReady() {
+  const geo = window.ArctiumGeo;
+  if (!geo) return false;
+  if (geo.isReady?.()) return true;
+  if (geo.ready) await geo.ready;
+  return !!geo.isReady?.();
 }
 
 function emFuelOptions(selected) {
@@ -334,7 +469,7 @@ async function emApplyRouteFuelFromPorts() {
     return { ok: false, error: 'Route engine not available' };
   }
 
-  const route = await engine.calculateLegRoute(pol, pod);
+  const route = await engine.calculateLegRoute(pol, pod, emGetCanalOpts());
   if (route.error) return { ok: false, error: route.error };
 
   const { speedKn, mtPerDay } = emGetSpeedAndFuelRate();
@@ -361,12 +496,19 @@ async function emApplyRouteFuelFromPorts() {
     ecaNM: route.ecaNM,
     nonEcaNM: route.nonEcaNM,
     seaDays: fuel.seaDays,
+    waypoints: route.waypoints,
+    pol,
+    pod,
   };
 }
 
 function emResetETS() {
   document.getElementById('em-vessel').value = '';
   emSetCoverage('100');
+  emSuezToggle = 'use';
+  emPanamaToggle = 'use';
+  emSetToggleUi('em-suez-toggle', 'use');
+  emSetToggleUi('em-panama-toggle', 'use');
   clearRoutePortField('em-pol', 'em-pol-meta');
   clearRoutePortField('em-pod', 'em-pod-meta');
   document.getElementById('em-voyage-days').value = '';
@@ -413,6 +555,11 @@ async function emCalcETS() {
     const pol = typeof getRoutePortFromInput === 'function' ? getRoutePortFromInput('em-pol') : null;
     const pod = typeof getRoutePortFromInput === 'function' ? getRoutePortFromInput('em-pod') : null;
     if (pol && pod) {
+      const geoOk = await emEnsureGeoReady();
+      if (!geoOk) {
+        emShowGeoLoadError();
+        return;
+      }
       const routeResult = await emApplyRouteFuelFromPorts();
       if (!routeResult.ok) {
         emShowWarning(routeResult.error);
@@ -452,6 +599,8 @@ async function emCalcETS() {
       costPerDay,
       complianceYear,
       routeMeta,
+      pol,
+      pod,
     });
   });
 }
@@ -584,6 +733,7 @@ function emRenderFuelEU(container, data, fuelEu, etsFuelRowsHtml, etsTotalsHtml)
 }
 
 function emRenderResults(data) {
+  emDestroyRouteMap();
   const container = document.getElementById('emissionsResults');
   container.innerHTML = '';
   const fuelEu = emComputeFuelEU(data.fuels, data.coverage, data.complianceYear);
@@ -681,6 +831,25 @@ function emRenderResults(data) {
   `;
 
   emRenderFuelEU(container, data, fuelEu, fuelRows, etsTotalsHtml);
+
+  const routeForMap = data.routeMeta?.waypoints?.length
+    ? { ...data.routeMeta, pol: data.routeMeta.pol || data.pol, pod: data.routeMeta.pod || data.pod }
+    : null;
+  if (routeForMap) {
+    emRenderRouteMap(container, routeForMap);
+  }
+}
+
+function emShowFileProtocolBanner() {
+  if (window.location.protocol !== 'file:') return;
+  const root = document.getElementById('emissions-app');
+  if (!root || document.getElementById('em-file-protocol-banner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'em-file-protocol-banner';
+  banner.className = 'em-file-protocol-banner';
+  banner.innerHTML =
+    'Opened as a local file (<code>file://</code>). Route and map need a local server — run <strong>serve.bat</strong> or <code>python -m http.server 8080</code>, then open <code>http://127.0.0.1:8080/</code>.';
+  root.prepend(banner);
 }
 
 function emInitApp() {
@@ -688,6 +857,8 @@ function emInitApp() {
   const root = document.getElementById('emissions-app');
   if (!root || root.dataset.emInit === '1') return;
   root.dataset.emInit = '1';
+
+  emShowFileProtocolBanner();
 
   if (!inIframe) {
     document.documentElement.setAttribute('data-ui-theme', 'dark');
@@ -701,6 +872,8 @@ function emInitApp() {
   }, true);
 
   wireEmissionsPorts();
+  emSetupToggle('em-suez-toggle', v => { emSuezToggle = v; });
+  emSetupToggle('em-panama-toggle', v => { emPanamaToggle = v; });
   if (!emFuelRows.length) {
     emAddFuelRow({ fuel: 'VLSFO' });
     emAddFuelRow({ fuel: 'LSMGO' });

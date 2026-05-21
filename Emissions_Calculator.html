@@ -7,6 +7,7 @@
 <link rel="icon" href="Favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="emissions.css">
 <link rel="stylesheet" href="port-autocomplete.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <style>
 :root {
   --bg: #0d0f0e;
@@ -100,16 +101,22 @@ body.emissions-standalone {
   width: 100%;
 }
 .emissions-standalone .run-btn {
-  background: var(--accent-glow);
-  border: 1px solid var(--accent-dim);
-  color: var(--accent);
+  background: var(--accent);
+  border: none;
+  border-radius: 4px;
+  color: #0d0f0e;
   cursor: pointer;
   font-family: inherit;
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 600;
   letter-spacing: 0.08em;
   padding: 13px 16px;
   text-transform: uppercase;
   width: 100%;
+  transition: opacity 0.15s;
+}
+.emissions-standalone .run-btn:hover {
+  opacity: 0.88;
 }
 .emissions-standalone .add-leg-btn {
   background: transparent;
@@ -197,6 +204,20 @@ body.emissions-standalone {
               <div class="route-port-list" id="em-pod-list"></div>
             </div>
           </div>
+          <div class="field span-2">
+            <label>Suez Canal</label>
+            <div class="toggle-group" id="em-suez-toggle">
+              <button type="button" class="toggle-btn active" data-value="use">Use</button>
+              <button type="button" class="toggle-btn" data-value="avoid">Avoid</button>
+            </div>
+          </div>
+          <div class="field span-2">
+            <label>Panama Canal</label>
+            <div class="toggle-group" id="em-panama-toggle">
+              <button type="button" class="toggle-btn active" data-value="use">Use</button>
+              <button type="button" class="toggle-btn" data-value="avoid">Avoid</button>
+            </div>
+          </div>
           <div class="field">
             <label>Voyage days</label>
             <input type="text" inputmode="decimal" class="num-fmt" id="em-voyage-days" data-decimals="1">
@@ -269,7 +290,9 @@ body.emissions-standalone {
   }
   const searoute = searouteMod.default ?? searouteMod.searoute;
   const clearFinderCache = searouteMod.clearFinderCache;
+  const searouteAlternatives = searouteMod.seaRouteAlternatives ?? searouteMod.searouteAlternatives;
   window.searoute = searoute;
+  window.searouteAlternatives = searouteAlternatives;
   window.clearSearouteCache = clearFinderCache;
   await new Promise((resolve, reject) => {
     const s = document.createElement('script');
@@ -281,6 +304,7 @@ body.emissions-standalone {
   window.dispatchEvent(new Event('searoute-ready'));
 </script>
 <script src="arc-loading.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="emissions-tab.js"></script>
 </body>
 </html>

@@ -43,7 +43,21 @@ Model **voyage arcs** with vessel defaults (speeds laden/ballast, broker commiss
 | **Data** | `ports.json`, `all_cargo_grades.json`, and `wet_cargo_grades.json` ship with the site for lookups and autocomplete. |
 | **Assets** | `logo.svg`, `Favicon.svg`; `CNAME` is set for GitHub Pages–style hosting on `arctiumlabs.com`. |
 
-To run locally, serve the repository root as static files (any static file server is fine) so assets and API calls behave consistently, then open the served URL in your browser.
+To run locally, **do not open `index.html` directly** (`file://`). Route and emissions tools load `2km.geojson` and related layers via `fetch`, which browsers block on `file://`.
+
+From the repository root:
+
+```powershell
+# Windows — double-click serve.bat, or:
+.\serve.ps1
+```
+
+```bash
+# macOS / Linux
+python3 -m http.server 8080
+```
+
+Then open **http://127.0.0.1:8080/** (or the port you chose). Any static file server at the repo root works the same way.
 
 ---
 

@@ -643,22 +643,31 @@
     overflow: hidden;
   }
 
+  /* Full-screen frosted layer above header, tabs, and iframes */
+  body.arc-loading::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 29999;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    background: rgba(13, 15, 14, 0.55);
+    pointer-events: all;
+  }
+
   body.arc-loading iframe {
-    filter: blur(10px);
     pointer-events: none;
   }
 
   .arc-loading-overlay {
     position: fixed;
     inset: 0;
-    z-index: 10000;
+    z-index: 30000;
     display: flex;
     align-items: center;
     justify-content: center;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    background: rgba(13, 15, 14, 0.2);
-    pointer-events: all;
+    background: transparent;
+    pointer-events: none;
   }
 
   .arc-loading-overlay[hidden] {
@@ -677,6 +686,7 @@
     display: block;
     transform-origin: center center;
     animation: arc-loading-spin 1.5s steps(12) infinite;
+    pointer-events: none;
   }
 
   /* AUTH OVERLAY */
@@ -8858,6 +8868,9 @@ function hideArcLoading() {
   document.body.removeAttribute('aria-busy');
 }
 
+window.showArcLoading = showArcLoading;
+window.hideArcLoading = hideArcLoading;
+
 async function withArcLoading(task) {
   showArcLoading();
   await arcLoadingPaintBuffer();
@@ -8870,6 +8883,8 @@ async function withArcLoading(task) {
     hideArcLoading();
   }
 }
+
+window.withArcLoading = withArcLoading;
 
 function clearSpotArcsError() {
   const error = document.getElementById('spotArcsError');

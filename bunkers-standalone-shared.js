@@ -400,48 +400,6 @@ function getRoutePortFromInput(inputOrId) {
   if (input._arctiumPort && isValidPortCatalogEntry(input._arctiumPort)) return input._arctiumPort;
   return findExactPortInCatalog(input.value);
 }
-const ARC_LOADING_MIN_MS = 1500;
-const ARC_LOADING_PAINT_MS = 15;
-let arcLoadingDepth = 0;
-
-function arcLoadingPaintBuffer() {
-  return new Promise((resolve) => setTimeout(resolve, ARC_LOADING_PAINT_MS));
-}
-
-function showArcLoading() {
-  arcLoadingDepth++;
-  const overlay = document.getElementById('arcLoadingOverlay');
-  if (!overlay) return;
-  overlay.hidden = false;
-  overlay.setAttribute('aria-hidden', 'false');
-  document.body.classList.add('arc-loading');
-  document.body.setAttribute('aria-busy', 'true');
-}
-
-function hideArcLoading() {
-  arcLoadingDepth = Math.max(0, arcLoadingDepth - 1);
-  if (arcLoadingDepth > 0) return;
-  const overlay = document.getElementById('arcLoadingOverlay');
-  if (overlay) {
-    overlay.hidden = true;
-    overlay.setAttribute('aria-hidden', 'true');
-  }
-  document.body.classList.remove('arc-loading');
-  document.body.removeAttribute('aria-busy');
-}
-
-async function withArcLoading(task) {
-  showArcLoading();
-  await arcLoadingPaintBuffer();
-  const started = performance.now();
-  try {
-    return await task();
-  } finally {
-    const delay = Math.max(0, ARC_LOADING_MIN_MS - (performance.now() - started));
-    await new Promise(resolve => setTimeout(resolve, delay));
-    hideArcLoading();
-  }
-}
 const EXPORT_PAGE_BADGE_LOGO_SCALE = 1.35;
 const EXPORT_PAGE_BADGE_GAP_PT = 4;
 const EXPORT_PDF_CAPTURE_SCALE = 2;
