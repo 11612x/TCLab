@@ -8,6 +8,7 @@
   let landmassFeatures = null;
   let ecaFeatures = null;
   let segmentIndex = null;
+  let landBboxIndex = null;
   let loadError = null;
   const segmentBufferCache = new Map();
 
@@ -135,9 +136,41 @@
 
   function pointOnLand(lon, lat) {
     if (!landmassFeatures?.length || typeof turf === 'undefined') return false;
+
+    if (typeof rbush !== 'function') {
+      if (!document.querySelector('script[data-arctium-rbush]')) {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/rbush@3.0.1/rbush.min.js';
+        s.dataset.arctiumRbush = '1';
+        document.head.appendChild(s);
+      }
+      const pt = turf.point([lon, lat]);
+      for (const f of landmassFeatures) {
+        if (turf.booleanPointInPolygon(pt, f)) return true;
+      }
+      return false;
+    }
+
+    if (!landBboxIndex) {
+      const tree = rbush();
+      const items = landmassFeatures.map((feature) => {
+        const bbox = turf.bbox(feature);
+        return {
+          minX: bbox[0],
+          minY: bbox[1],
+          maxX: bbox[2],
+          maxY: bbox[3],
+          feature,
+        };
+      });
+      tree.load(items);
+      landBboxIndex = tree;
+    }
+
     const pt = turf.point([lon, lat]);
-    for (const f of landmassFeatures) {
-      if (turf.booleanPointInPolygon(pt, f)) return true;
+    const nearby = landBboxIndex.search({ minX: lon, minY: lat, maxX: lon, maxY: lat });
+    for (const item of nearby) {
+      if (turf.booleanPointInPolygon(pt, item.feature)) return true;
     }
     return false;
   }
@@ -195,18 +228,25 @@
   let geoLoaded = false;
 
   function constrainWaypoints(coords) {
-    if (!Array.isArray(coords) || coords.length < 2) return coords;
-    const out = [];
-    for (let i = 0; i < coords.length; i++) {
-      let [lon, lat] = coords[i];
-      [lon, lat] = snapToWaterway(lon, lat);
-      if (!pointInWaterwayCorridor(lon, lat)) continue;
-      if (pointOnLand(lon, lat)) continue;
-      const prev = out[out.length - 1];
-      if (prev && prev[0] === lon && prev[1] === lat) continue;
-      out.push([lon, lat]);
+    console.time('constrainWaypoints');
+    console.log('[route] constraining waypoints:', coords?.length);
+    try {
+      if (!Array.isArray(coords) || coords.length < 2) return coords;
+      const out = [];
+      for (let i = 0; i < coords.length; i++) {
+        let [lon, lat] = coords[i];
+        if (!pointInWaterwayCorridor(lon, lat)) {
+          [lon, lat] = snapToWaterway(lon, lat);
+        }
+        if (pointOnLand(lon, lat)) continue;
+        const prev = out[out.length - 1];
+        if (prev && prev[0] === lon && prev[1] === lat) continue;
+        out.push([lon, lat]);
+      }
+      return out.length >= 2 ? out : coords;
+    } finally {
+      console.timeEnd('constrainWaypoints');
     }
-    return out.length >= 2 ? out : coords;
   }
 
   const api = {

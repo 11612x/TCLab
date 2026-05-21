@@ -280,28 +280,3 @@ box-sizing: border-box;
     font-weight: 500;
 }
 
-#emissions-app .em-route-map-card {
-    margin-top: 16px;
-}
-
-#emissions-app .em-route-map {
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    height: 360px;
-    margin-top: 10px;
-    width: 100%;
-}
-
-#emissions-app .em-route-map .leaflet-container {
-    background: var(--surface2);
-    border-radius: 4px;
-    font-family: 'Consolas', 'Courier New', monospace;
-}
-
-#emissions-app .em-route-map-caption {
-    color: var(--text-muted);
-    font-size: 12px;
-    letter-spacing: 0.04em;
-    margin-top: 8px;
-}
-

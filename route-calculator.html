@@ -423,30 +423,6 @@ body {
   opacity: 0.4;
 }
 
-.route-map-card {
-  margin-top: 0.75rem;
-}
-
-.route-voyage-map {
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  height: 360px;
-  margin-top: 0.5rem;
-  width: 100%;
-}
-
-.route-voyage-map .leaflet-container {
-  background: var(--surface2);
-  border-radius: 4px;
-  font-family: inherit;
-}
-
-.route-map-caption {
-  color: var(--text-muted);
-  font-size: 12px;
-  margin-top: 8px;
-}
-
 .banner.file-protocol-banner {
   background: rgba(184, 120, 120, 0.12);
   border-bottom: 1px solid var(--red);
@@ -463,11 +439,10 @@ body {
   font-size: 12px;
 }
 </style>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 </head>
 <body>
 <div id="port-banner" class="banner">Port database unavailable — refresh page</div>
-<div id="file-protocol-banner" class="banner file-protocol-banner">Opened as a local file (<code>file://</code>). Route map and geo layers need HTTP — run <strong>serve.bat</strong> or <code>python -m http.server 8080</code>, then open <code>http://127.0.0.1:8080/</code>.</div>
+<div id="file-protocol-banner" class="banner file-protocol-banner">Opened as a local file (<code>file://</code>). Geo layers need HTTP — run <strong>serve.bat</strong> or <code>python -m http.server 8080</code>, then open <code>http://127.0.0.1:8080/</code>.</div>
 <div class="layout">
   <aside class="panel-left">
     <div class="card">
@@ -513,7 +488,6 @@ body {
 </div>
 <link rel="stylesheet" href="port-autocomplete.css">
 <script src="arc-loading.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="ports.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 <script src="route-geo-loader.js"></script>
@@ -623,8 +597,6 @@ function portMatchesSelection(p, inputVal) {
 let PORTS = [];
 const MAX_ROUTE_PORTS = 5;
 let routePorts = [null, null];
-let routeMap = null;
-let routeMapLayers = null;
 
 function geoLoadHint() {
   if (window.location.protocol !== 'file:') return '';
@@ -636,76 +608,6 @@ function showFileProtocolBanner() {
   document.getElementById('file-protocol-banner')?.classList.add('visible');
 }
 
-function destroyRouteMap() {
-  if (routeMap) {
-    routeMap.remove();
-    routeMap = null;
-    routeMapLayers = null;
-  }
-}
-
-function renderRouteMap(container, { waypoints, ports, totalNM }) {
-  if (!waypoints?.length || typeof L === 'undefined' || !container) return;
-
-  const latlngs = waypoints.map(c => [c[1], c[0]]);
-  const routeLabel = (ports || []).filter(isValidPort).map(portDisplayName).join(' → ');
-  const distLabel = totalNM != null ? fmtNM(totalNM) : '';
-
-  const wrap = document.createElement('div');
-  wrap.className = 'card route-map-card';
-  wrap.innerHTML = `
-    <div class="card-title">Voyage Route</div>
-    <div class="route-voyage-map" id="route-voyage-map"></div>
-    <div class="route-map-caption">${routeLabel || 'Route'}${distLabel ? ' · ' + distLabel : ''}</div>
-  `;
-  container.appendChild(wrap);
-
-  const mapEl = document.getElementById('route-voyage-map');
-  if (!mapEl) return;
-
-  const maxLat = window.ArctiumRouteEngine?.MAX_ROUTE_LAT_N ?? 70;
-  const minLat = window.ArctiumRouteEngine?.MIN_ROUTE_LAT_S ?? -60;
-  routeMap = L.map(mapEl, {
-    zoomControl: true,
-    maxBounds: [[minLat, -180], [maxLat, 180]],
-    maxBoundsViscosity: 1,
-  });
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    referrerPolicy: 'strict-origin-when-cross-origin',
-  }).addTo(routeMap);
-
-  routeMapLayers = L.layerGroup().addTo(routeMap);
-
-  L.polyline(latlngs, {
-    color: '#78b8a8',
-    weight: 2.5,
-    opacity: 0.9,
-  }).addTo(routeMapLayers);
-
-  const validPorts = (ports || []).filter(isValidPort);
-  const markerOpts = { radius: 6, weight: 2, fillOpacity: 0.9 };
-  validPorts.forEach((port, i) => {
-    const lat = Number(port.lat);
-    const lon = Number(port.lon);
-    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
-    const isFirst = i === 0;
-    const isLast = i === validPorts.length - 1;
-    const color = isFirst ? '#9ab89a' : isLast ? '#b8a89a' : '#b8b878';
-    const fillColor = isFirst ? '#6a8a6a' : isLast ? '#8a7a6a' : '#8a8a5a';
-    L.circleMarker([lat, lon], { ...markerOpts, color, fillColor })
-      .bindTooltip(portDisplayName(port), { direction: 'top', offset: [0, -6] })
-      .addTo(routeMapLayers);
-  });
-
-  const bounds = L.latLngBounds(latlngs);
-  routeMap.fitBounds(bounds, { padding: [28, 28], maxZoom: 8 });
-  requestAnimationFrame(() => {
-    routeMap?.invalidateSize();
-    routeMap?.fitBounds(bounds, { padding: [28, 28], maxZoom: 8 });
-  });
-}
 let suezToggle = 'use', panamaToggle = 'use';
 
 function loadPorts() {
@@ -877,7 +779,6 @@ function portDisplayName(p) {
 }
 
 function resetRouteCalculator() {
-  destroyRouteMap();
   routePorts = [null, null];
   renderRoutePortFields();
 
@@ -1196,7 +1097,6 @@ async function calculateRoute() {
 }
 
 function renderError(msg) {
-  destroyRouteMap();
   document.getElementById('empty-state').style.display = 'none';
   const content = document.getElementById('results-content');
   content.style.display = 'block';
@@ -1204,7 +1104,6 @@ function renderError(msg) {
 }
 
 function renderResults(d) {
-  destroyRouteMap();
   document.getElementById('empty-state').style.display = 'none';
   const content = document.getElementById('results-content');
   content.style.display = 'block';
@@ -1270,14 +1169,6 @@ function renderResults(d) {
   html += `<p class="estimate-note">All figures above are rough estimates for planning only — not for navigation, charter party, or regulatory compliance. Sea distance uses the 2 km waterway network; ECA exposure is sampled along the route; bunker and cost assume fixed rates and speed.</p>`;
 
   content.innerHTML = html;
-
-  if (d.waypoints?.length) {
-    renderRouteMap(content, {
-      waypoints: d.waypoints,
-      ports: d.ports,
-      totalNM: d.totalNM,
-    });
-  }
 }
 
 setupToggle('suez-toggle', v => { suezToggle = v; });
