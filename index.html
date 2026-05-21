@@ -4821,6 +4821,11 @@ const LIVE_POS_KPLER_COLUMN_ORDER = [
 
 const LIVE_POS_KPLER_EXCLUDED_LABELS = new Set(['cargo', 'amount']);
 
+/** Column B values that are field labels, not block "as of" dates — avoids splitting one block in two. */
+const LIVE_POS_KPLER_ROW_LABELS = new Set(
+  [...LIVE_POS_KPLER_COLUMN_ORDER, 'Cargo', 'Amount', 'As of'].map(livePosNorm)
+);
+
 /** Legacy generic uploads (before KPLER) — column pickers */
 const LIVE_POS_CONFIG = {
   shipColumnCandidates: ['Vessel', 'Vessel name', 'Ship', 'Ship name'],
@@ -5217,6 +5222,9 @@ function livePosKplerRowIsEmpty(r) {
 /** Block header: column B is a date, column C is the first vessel name. */
 function livePosIsKplerBlockHeaderRow(row) {
   if (!row || row.length < 3) return false;
+  const bRaw = row[1];
+  const bLabel = bRaw !== null && bRaw !== undefined ? String(bRaw).trim() : '';
+  if (!bLabel || LIVE_POS_KPLER_ROW_LABELS.has(livePosNorm(bLabel))) return false;
   const c = row[2];
   if (c === null || c === undefined || c === '') return false;
   if (typeof c !== 'string' && typeof c !== 'number') return false;
@@ -5275,26 +5283,36 @@ function livePosFindKplerBlockHeaderIndices(aoa) {
   return blocks;
 }
 
-function livePosPickLatestKplerBlock(blocks) {
-  let pick = blocks[0];
-  for (let b = 1; b < blocks.length; b++) {
-    const cur = blocks[b];
-    const curMs = cur.asOfMs ?? -Infinity;
-    const pickMs = pick.asOfMs ?? -Infinity;
-    if (curMs > pickMs) pick = cur;
-    else if (curMs === pickMs && cur.i > pick.i) pick = cur;
+/**
+ * Parse every dated block on the sheet, then merge by vessel name.
+ * Same vessel in multiple blocks → keep the row from the block with the latest "as of" date.
+ */
+function livePosMergeKplerBlocksByVessel(blocks, aoa) {
+  const byVessel = new Map();
+  let maxAsOfMs = null;
+  for (const block of blocks) {
+    const { rows } = livePosParseKplerBlockAt(aoa, block.i);
+    const asOfMs = block.asOfMs ?? null;
+    if (asOfMs != null && (maxAsOfMs == null || asOfMs > maxAsOfMs)) maxAsOfMs = asOfMs;
+    for (const row of rows) {
+      const nm = livePosNorm(String(row.Vessel ?? ''));
+      if (!nm) continue;
+      const prev = byVessel.get(nm);
+      const prevMs = prev?.asOfMs ?? -Infinity;
+      const curMs = asOfMs ?? -Infinity;
+      if (!prev || curMs > prevMs || (curMs === prevMs && block.i >= (prev.blockIndex ?? -1))) {
+        byVessel.set(nm, { row, asOfMs, blockIndex: block.i });
+      }
+    }
   }
-  return pick;
+  return { rows: [...byVessel.values()].map(v => v.row), asOfMs: maxAsOfMs };
 }
 
-/** Daily upload uses only the newest dated block; older blocks on the sheet are ignored. */
 function livePosParseKplerAoa(aoa) {
   const blocks = livePosFindKplerBlockHeaderIndices(aoa);
   if (!blocks.length) return { error: 'No vessel blocks found on the KPLER sheet.' };
-  const latest = livePosPickLatestKplerBlock(blocks);
-  const { rows } = livePosParseKplerBlockAt(aoa, latest.i);
-  if (!rows.length) return { error: 'No vessels found in the latest position block on the KPLER sheet.' };
-  const asOfMs = latest.asOfMs;
+  const { rows, asOfMs } = livePosMergeKplerBlocksByVessel(blocks, aoa);
+  if (!rows.length) return { error: 'No vessels found on the KPLER sheet.' };
   return {
     rows,
     headers: LIVE_POS_KPLER_COLUMN_ORDER.slice(),
