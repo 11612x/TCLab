@@ -282,6 +282,7 @@
   .tc-label-input {
     flex: 1;
     background: transparent;
+    background-color: var(--surface2);
     border: none;
     color: var(--text);
     font-family: 'Consolas', 'Courier New', monospace;
@@ -461,6 +462,7 @@
 
   #tab-tc .tc-label-input {
     line-height: 1.25;
+    background-color: var(--surface2);
   }
 
   .add-tc-btn {
@@ -2074,31 +2076,28 @@
   .live-pos-table--kpler td:nth-child(1) { width: 11%; }
 
   .live-pos-table--kpler th:nth-child(2),
-  .live-pos-table--kpler td:nth-child(2) { width: 8%; }
+  .live-pos-table--kpler td:nth-child(2) { width: 10%; }
 
   .live-pos-table--kpler th:nth-child(3),
-  .live-pos-table--kpler td:nth-child(3) { width: 10%; }
+  .live-pos-table--kpler td:nth-child(3) { width: 18%; }
 
   .live-pos-table--kpler th:nth-child(4),
-  .live-pos-table--kpler td:nth-child(4) { width: 18%; }
+  .live-pos-table--kpler td:nth-child(4) { width: 9%; }
 
   .live-pos-table--kpler th:nth-child(5),
   .live-pos-table--kpler td:nth-child(5) { width: 9%; }
 
   .live-pos-table--kpler th:nth-child(6),
-  .live-pos-table--kpler td:nth-child(6) { width: 9%; }
+  .live-pos-table--kpler td:nth-child(6) { width: 11%; }
 
   .live-pos-table--kpler th:nth-child(7),
-  .live-pos-table--kpler td:nth-child(7) { width: 11%; }
+  .live-pos-table--kpler td:nth-child(7) { width: 12%; }
 
   .live-pos-table--kpler th:nth-child(8),
-  .live-pos-table--kpler td:nth-child(8) { width: 12%; }
+  .live-pos-table--kpler td:nth-child(8) { width: 10%; }
 
   .live-pos-table--kpler th:nth-child(9),
   .live-pos-table--kpler td:nth-child(9) { width: 10%; }
-
-  .live-pos-table--kpler th:nth-child(10),
-  .live-pos-table--kpler td:nth-child(10) { width: 10%; }
 
   .live-pos-eta-cell {
     vertical-align: middle;
@@ -3099,6 +3098,7 @@
   .chain-block-header .chain-label {
     flex: 1;
     background: transparent;
+    background-color: var(--surface);
     border: none;
     color: var(--text);
     font-family: 'Consolas', 'Courier New', monospace;
@@ -3108,6 +3108,10 @@
     outline: none;
     text-transform: uppercase;
     min-width: 0;
+  }
+
+  #tab-voy .chain-block-header .chain-label {
+    background-color: var(--surface);
   }
 
   .legs-container {
@@ -4270,15 +4274,23 @@ async function loadVesselPositions() {
   const v = await loadAppDataJson(APP_DATA_KEYS.vessel_positions);
   livePosStored = v && typeof v === 'object' && Array.isArray(v.rows) ? livePosNormalizeStoredPayload(v) : null;
   livePosTableEditMode = false;
-  livePosSortReset();
+  livePosSortReset(
+    livePosStored?.headers?.length
+      ? livePosFilterDisplayCols(livePosColsWithEtaOpenLast(livePosStored.headers))
+      : null
+  );
   livePosRender();
 }
 
 async function saveVesselPositionsPayload(payload) {
-  livePosStored = payload;
-  livePosSortReset();
+  livePosStored = livePosNormalizeStoredPayload(payload);
+  livePosSortReset(
+    livePosStored?.headers?.length
+      ? livePosFilterDisplayCols(livePosColsWithEtaOpenLast(livePosStored.headers))
+      : null
+  );
   livePosRender();
-  await upsertAppData(APP_DATA_KEYS.vessel_positions, payload);
+  await upsertAppData(APP_DATA_KEYS.vessel_positions, livePosStored);
 }
 
 function scheduleLivePosEtaPersist() {
@@ -4786,9 +4798,9 @@ const LIVE_POS_ETA_OPEN_COLUMN = 'ETA OPEN';
 const LIVE_POS_ETA_NA_CANON = '00/00/0000';
 /** Not fixed — vessel is open; fleet sees “Open”. Survives re-upload like other ETA OPEN values. */
 const LIVE_POS_ETA_OPEN_TEXT_CANON = 'Open';
+const LIVE_POS_ETA_SUBS_CANON = 'SUBS';
 const LIVE_POS_KPLER_COLUMN_ORDER = [
   'Vessel',
-  'As of',
   'Current Position',
   'Port',
   'ETA/Arrived',
@@ -4812,9 +4824,9 @@ function livePosNorm(s) {
   return String(s ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
-const LIVE_POS_DATE_SORT_KEYS = new Set([livePosNorm('As of'), livePosNorm('ETA/Arrived'), livePosNorm(LIVE_POS_ETA_OPEN_COLUMN)]);
+const LIVE_POS_DATE_SORT_KEYS = new Set([livePosNorm('ETA/Arrived'), livePosNorm(LIVE_POS_ETA_OPEN_COLUMN)]);
 
-let livePosSortState = { key: null, dir: 'asc' };
+let livePosSortState = { key: 'Vessel', dir: 'asc' };
 
 /** vessel_name → Supabase rows for comment icons + panel */
 const vesselCommentsByVessel = new Map();
@@ -4833,8 +4845,13 @@ let dashE2SelectedThreadRootId = null;
 let dashE2UnresolvedInitDone = false;
 let dashE2SortState = { key: 'lastAt', dir: 'desc' };
 
-function livePosSortReset() {
-  livePosSortState = { key: null, dir: 'asc' };
+function livePosSortReset(cols) {
+  const key = cols?.length ? livePosFindShipColumnKey(cols) : 'Vessel';
+  livePosSortState = { key: key || 'Vessel', dir: 'asc' };
+}
+
+function livePosFilterDisplayCols(cols) {
+  return (cols || []).filter(c => c && livePosNorm(c) !== livePosNorm('As of'));
 }
 
 function livePosOnHeaderClick(columnKey) {
@@ -4874,6 +4891,10 @@ function livePosEtaOpenIsOpenSentinel(v) {
   return livePosNorm(v) === 'open';
 }
 
+function livePosEtaOpenIsSubsSentinel(v) {
+  return livePosNorm(v) === 'subs';
+}
+
 /** Blank, typed n/a, or legacy 00/00/0000 — stored as empty; everyone sees N/A. */
 function livePosEtaOpenIsNaDisplay(v) {
   if (v === null || v === undefined) return true;
@@ -4886,10 +4907,23 @@ function livePosEtaOpenIsNaDisplay(v) {
 
 function livePosEtaOpenSortComparable(v) {
   if (livePosEtaOpenIsNaDisplay(v)) return '2';
-  if (livePosEtaOpenIsOpenSentinel(v) || String(v ?? '').trim() === LIVE_POS_ETA_OPEN_TEXT_CANON) return '1';
+  if (livePosEtaOpenIsSubsSentinel(v) || String(v ?? '').trim() === LIVE_POS_ETA_SUBS_CANON) return '1b';
+  if (livePosEtaOpenIsOpenSentinel(v) || String(v ?? '').trim() === LIVE_POS_ETA_OPEN_TEXT_CANON) return '1a';
   const iso = livePosEtaIsoFromRowCell(v);
   if (!iso) return '2';
   return `0${iso}`;
+}
+
+function livePosParseEtaOpenSlashDate(d, mo, y) {
+  if (d === 0 && mo === 0 && y === 0) return { ok: true, stored: '' };
+  let year = y;
+  if (year < 100) year += 2000;
+  const dt = new Date(year, mo - 1, d);
+  if (dt.getFullYear() !== year || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return { ok: false };
+  return {
+    ok: true,
+    stored: `${year}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`,
+  };
 }
 
 function livePosParseEtaOpenUserInput(raw) {
@@ -4898,19 +4932,20 @@ function livePosParseEtaOpenUserInput(raw) {
   if (/^n\s*\/\s*a$/i.test(s0)) return { ok: true, stored: '' };
   if (livePosEtaOpenIsNaSentinel(s0)) return { ok: true, stored: '' };
   if (livePosNorm(s0) === 'open') return { ok: true, stored: LIVE_POS_ETA_OPEN_TEXT_CANON };
+  if (livePosNorm(s0) === 'subs') return { ok: true, stored: LIVE_POS_ETA_SUBS_CANON };
   if (/^\d{4}-\d{2}-\d{2}$/.test(s0)) {
     const [y, m, d] = s0.split('-').map(Number);
     const dt = new Date(y, m - 1, d);
     if (dt.getFullYear() !== y || dt.getMonth() !== m - 1 || dt.getDate() !== d) return { ok: false };
     return { ok: true, stored: s0 };
   }
+  const slash2 = s0.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/);
+  if (slash2) {
+    return livePosParseEtaOpenSlashDate(+slash2[1], +slash2[2], +slash2[3]);
+  }
   const slash = s0.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (slash) {
-    const d = +slash[1], mo = +slash[2], y = +slash[3];
-    if (d === 0 && mo === 0 && y === 0) return { ok: true, stored: '' };
-    const dt = new Date(y, mo - 1, d);
-    if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return { ok: false };
-    return { ok: true, stored: `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}` };
+    return livePosParseEtaOpenSlashDate(+slash[1], +slash[2], +slash[3]);
   }
   const sp = s0.match(/^(\d{1,2})\s+(\d{1,2})\s+(\d{4})$/);
   if (sp) {
@@ -4926,6 +4961,7 @@ function livePosParseEtaOpenUserInput(raw) {
 function livePosEtaOpenToInputValue(stored) {
   if (stored == null || String(stored).trim() === '') return '';
   if (livePosEtaOpenIsNaDisplay(stored)) return '';
+  if (livePosEtaOpenIsSubsSentinel(stored) || String(stored).trim() === LIVE_POS_ETA_SUBS_CANON) return LIVE_POS_ETA_SUBS_CANON;
   if (livePosEtaOpenIsOpenSentinel(stored) || String(stored).trim() === LIVE_POS_ETA_OPEN_TEXT_CANON) return LIVE_POS_ETA_OPEN_TEXT_CANON;
   const iso = livePosEtaIsoFromRowCell(stored);
   if (!iso) return String(stored).trim();
@@ -4950,6 +4986,7 @@ function livePosEtaOpenCommitFromInput(inp, row, key) {
 function livePosEtaIsoFromRowCell(v) {
   if (livePosEtaOpenIsNaDisplay(v)) return '';
   const s = String(v).trim();
+  if (livePosEtaOpenIsSubsSentinel(s) || s === LIVE_POS_ETA_SUBS_CANON) return '';
   if (livePosEtaOpenIsOpenSentinel(s) || s === LIVE_POS_ETA_OPEN_TEXT_CANON) return '';
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
   if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
@@ -4963,6 +5000,7 @@ function livePosEtaIsoFromRowCell(v) {
 
 function livePosFmtEtaOpenDisplay(v) {
   if (livePosEtaOpenIsNaDisplay(v)) return 'N/A';
+  if (livePosEtaOpenIsSubsSentinel(v) || String(v ?? '').trim() === LIVE_POS_ETA_SUBS_CANON) return 'SUBS';
   if (livePosEtaOpenIsOpenSentinel(v) || String(v ?? '').trim() === LIVE_POS_ETA_OPEN_TEXT_CANON) return 'Open';
   const iso = livePosEtaIsoFromRowCell(v);
   if (!iso) return '—';
@@ -5012,9 +5050,11 @@ function livePosNormalizeStoredPayload(data) {
   data.rows.forEach(r => {
     if (r[eta] === undefined || r[eta] === '—') r[eta] = '';
     else if (livePosEtaOpenIsNaDisplay(r[eta])) r[eta] = '';
+    else if (livePosEtaOpenIsSubsSentinel(r[eta])) r[eta] = LIVE_POS_ETA_SUBS_CANON;
     else if (livePosEtaOpenIsOpenSentinel(r[eta])) r[eta] = LIVE_POS_ETA_OPEN_TEXT_CANON;
   });
   if (data.headers && Array.isArray(data.headers)) {
+    data.headers = livePosFilterDisplayCols(data.headers);
     if (!data.headers.includes(eta)) data.headers.push(eta);
     else data.headers = livePosColsWithEtaOpenLast(data.headers);
   }
@@ -5039,6 +5079,10 @@ function livePosMergeEtaOpenFromPrevious(newRows, prevData) {
     if (!prevStr || prevStr === '—') continue;
     if (livePosEtaOpenIsNaDisplay(prevStr)) {
       row[eta] = '';
+      continue;
+    }
+    if (livePosEtaOpenIsSubsSentinel(prevStr) || prevStr === LIVE_POS_ETA_SUBS_CANON) {
+      row[eta] = LIVE_POS_ETA_SUBS_CANON;
       continue;
     }
     if (livePosEtaOpenIsOpenSentinel(prevStr) || prevStr === LIVE_POS_ETA_OPEN_TEXT_CANON) {
@@ -5075,10 +5119,14 @@ function livePosCompareSortRows(rowA, rowB, columnKey) {
 }
 
 function livePosSortedRowsForDisplay(rows, cols) {
-  if (!livePosSortState.key || !cols.includes(livePosSortState.key)) return rows;
+  const key =
+    livePosSortState.key && cols.includes(livePosSortState.key)
+      ? livePosSortState.key
+      : livePosFindShipColumnKey(cols) || 'Vessel';
+  if (!cols.includes(key)) return rows;
   const out = rows.slice();
-  const dir = livePosSortState.dir;
-  const key = livePosSortState.key;
+  const dir =
+    livePosSortState.key && cols.includes(livePosSortState.key) ? livePosSortState.dir : 'asc';
   out.sort((a, b) => {
     const cmp = livePosCompareSortRows(a, b, key);
     return dir === 'desc' ? -cmp : cmp;
@@ -5113,10 +5161,6 @@ function livePosFmtKplerCell(v) {
   return s || '—';
 }
 
-function livePosFmtAsOfCell(v) {
-  return livePosFmtKplerCell(v);
-}
-
 function livePosKplerRowIsEmpty(r) {
   if (!r || !r.length) return true;
   return r.every(c => c === null || c === undefined || c === '');
@@ -5135,7 +5179,6 @@ function livePosIsKplerBlockHeaderRow(row) {
 
 function livePosParseKplerBlockAt(aoa, startIdx) {
   const headerRow = aoa[startIdx];
-  const asOfDisp = livePosFmtAsOfCell(headerRow[1]);
   const vessels = [];
   for (let col = 2; col < headerRow.length; col++) {
     const raw = headerRow[col];
@@ -5147,7 +5190,7 @@ function livePosParseKplerBlockAt(aoa, startIdx) {
   }
   const byName = {};
   for (const { name } of vessels) {
-    byName[name] = { Vessel: name, 'As of': asOfDisp };
+    byName[name] = { Vessel: name };
   }
   let j = startIdx + 1;
   for (; j < aoa.length; j++) {
@@ -5251,7 +5294,7 @@ async function livePosTableSaveFromDom() {
     });
   });
   if (invalidEta) {
-    livePosShowError('Invalid ETA OPEN. Use DD/MM/YYYY, Open, or blank/n/a for N/A.');
+    livePosShowError('Invalid ETA OPEN. Use DD/MM/YY or DD/MM/YYYY, Open, SUBS, or blank/n/a for N/A.');
     return;
   }
   livePosClearError();
@@ -5380,7 +5423,7 @@ function livePosOpenDetail(row) {
   const shipKey = livePosFindShipColumnKey(keys);
   titleEl.textContent = String(row[shipKey] != null && row[shipKey] !== '' ? row[shipKey] : shipKey || 'Vessel');
   dl.innerHTML = '';
-  keys
+  livePosFilterDisplayCols(keys)
     .slice()
     .sort((a, b) => livePosNorm(a).localeCompare(livePosNorm(b)))
     .forEach(k => {
@@ -5454,14 +5497,16 @@ function livePosRender() {
     if (showEdit) editBtn.textContent = livePosTableEditMode ? 'SAVE' : 'EDIT';
   }
 
-  const cols = livePosColsWithEtaOpenLast(
-    data.format === 'kpler' && Array.isArray(data.headers) && data.headers.length
-      ? data.headers.slice()
-      : livePosHomeColumnKeys(Object.keys(data.rows[0]))
+  const cols = livePosFilterDisplayCols(
+    livePosColsWithEtaOpenLast(
+      data.format === 'kpler' && Array.isArray(data.headers) && data.headers.length
+        ? data.headers.slice()
+        : livePosHomeColumnKeys(Object.keys(data.rows[0]))
+    )
   );
 
   if (livePosSortState.key && !cols.includes(livePosSortState.key)) {
-    livePosSortReset();
+    livePosSortReset(cols);
   }
 
   if (countEl) {
@@ -5529,8 +5574,8 @@ function livePosRender() {
           inp.setAttribute('data-live-pos-col', k);
           inp.setAttribute('aria-label', 'ETA OPEN');
           inp.autocomplete = 'off';
-          inp.placeholder = 'Enter ETA';
-          inp.title = 'Daily re-upload keeps this until you change it. Leave blank or type n/a for N/A (fixed indefinitely). Open = not fixed. Dates show as DD MM YYYY to others.';
+          inp.placeholder = 'DD/MM/YY, Open, SUBS, or blank';
+          inp.title = 'DD/MM/YY or DD/MM/YYYY (saved as DD/MM/YYYY). Open, SUBS, or blank/n/a for N/A. Survives daily re-upload by vessel name.';
           livePosBindCellInputStopPropagation(inp);
           td.appendChild(inp);
         } else {
@@ -7381,8 +7426,12 @@ async function dashExecuteSave(btn, getSnapshot) {
 // ═════════════════════════════════════════════════════════════════════════════
 
 const TWELVE_SYMBOLS_STORAGE_KEY = 'twelve_quotes_symbols';
-/** Defaults aligned with Desktop Twelve Data exports: etf.json (BWET, BDRY), forex_pairs.json (EUR/USD, USD/JPY). BZ=F/CL=F are not in stocks.json. */
-const TWELVE_DEFAULT_SYMBOLS = ['BWET', 'BDRY', 'EUR/USD', 'USD/JPY'];
+/** Defaults aligned with Desktop Twelve Data exports: etf.json (BWET, BDRY), forex_pairs.json (EUR/USD, USD/JPY). Brent row uses Twelve Data commodity XBR/USD. */
+const TWELVE_DEFAULT_SYMBOLS = ['BWET', 'BDRY', 'BRENT', 'EUR/USD', 'USD/JPY'];
+/** Instruments row label → Twelve Data quote symbols (first successful fetch wins). */
+const TWELVE_SYMBOL_CANDIDATES = {
+  BRENT: ['XBR/USD', 'BRENT', 'UKOIL', 'BZ=F'],
+};
 
 let twelveSymbols = TWELVE_DEFAULT_SYMBOLS.slice();
 let twelveInitDone = false;
@@ -7396,6 +7445,7 @@ function twelveNormalizeSymbolsFromCatalog(symbols) {
     let s = String(symbols[i] || '').trim();
     if (!s) continue;
     if (s === 'BDTY') s = 'BDRY';
+    if (s === 'UKOIL' || s === 'BZ=F' || s === 'XBR/USD') s = 'BRENT';
     if (seen.has(s)) continue;
     seen.add(s);
     out.push(s);
@@ -7419,39 +7469,72 @@ function twelveSaveSymbolsToStorage(symbols) {
   localStorage.setItem(TWELVE_SYMBOLS_STORAGE_KEY, JSON.stringify(symbols));
 }
 
+function twelveMergeMissingDefaults(symbols) {
+  const out = twelveNormalizeSymbolsFromCatalog(symbols);
+  TWELVE_DEFAULT_SYMBOLS.forEach(d => {
+    if (!out.includes(d)) out.push(d);
+  });
+  return out;
+}
+
 function twelveQuotesUpdateAdminUi() {}
 
-async function fetchQuote(symbol) {
-  try {
-    const API_KEY = twelveDataApiKey || '';
-    const url = `https://api.twelvedata.com/quote?symbol=${encodeURIComponent(symbol)}&apikey=${API_KEY}`;
-    const response = await fetch(url);
-    const data = await response.json();
-    console.log('Fetched:', data);
-    if (data && data.status === 'error') {
-      throw new Error(data.message || 'Twelve Data API error');
-    }
-    if (!response.ok) {
-      throw new Error((data && data.message) || `HTTP ${response.status}`);
-    }
-    const close = Number(data.close);
-    const prevClose = Number(data.previous_close);
-    let changePct = null;
-    if (Number.isFinite(close) && Number.isFinite(prevClose) && prevClose !== 0) {
-      changePct = ((close - prevClose) / prevClose) * 100;
-    }
-    return {
-      symbol: data.symbol,
-      price: data.close,
-      changePct,
-    };
-  } catch (e) {
-    throw e;
+function twelveQuoteApiError(data, response) {
+  if (!data) return null;
+  if (data.status === 'error' || data.code) {
+    return data.message || 'Twelve Data API error';
   }
+  if (!response.ok) return data.message || `HTTP ${response.status}`;
+  return null;
+}
+
+async function fetchQuote(symbol) {
+  const sym = String(symbol ?? '').trim();
+  if (!sym) throw new Error('Symbol is missing');
+  const API_KEY = twelveDataApiKey || '';
+  const url = `https://api.twelvedata.com/quote?symbol=${encodeURIComponent(sym)}&apikey=${API_KEY}`;
+  const response = await fetch(url);
+  const data = await response.json();
+  const err = twelveQuoteApiError(data, response);
+  if (err) throw new Error(err);
+  const close = Number(data.close);
+  const prevClose = Number(data.previous_close);
+  let changePct = null;
+  if (Number.isFinite(close) && Number.isFinite(prevClose) && prevClose !== 0) {
+    changePct = ((close - prevClose) / prevClose) * 100;
+  }
+  return {
+    symbol: data.symbol,
+    price: data.close,
+    changePct,
+  };
+}
+
+async function fetchQuoteForInstrument(label) {
+  const candidates = TWELVE_SYMBOL_CANDIDATES[label] || [label];
+  let lastErr;
+  for (let i = 0; i < candidates.length; i++) {
+    try {
+      const q = await fetchQuote(candidates[i]);
+      return { symbol: label, price: q.price, changePct: q.changePct };
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr || new Error(`No quote for ${label}`);
 }
 
 async function fetchAllQuotes(symbols) {
-  return Promise.all(symbols.map(s => fetchQuote(s)));
+  return Promise.all(
+    symbols.map(async label => {
+      try {
+        return await fetchQuoteForInstrument(label);
+      } catch (e) {
+        console.warn(`quote ${label}:`, e);
+        return { symbol: label, price: null, changePct: null, failed: true };
+      }
+    })
+  );
 }
 
 function twelveChgDirectionClass(pct) {
@@ -7547,6 +7630,14 @@ async function twelveRefreshQuotes() {
     const quotes = await fetchAllQuotes(twelveSymbols);
     renderTable(quotes);
     twelveSaveSymbolsToStorage(twelveSymbols);
+    const failed = quotes.filter(q => q.failed).map(q => q.symbol);
+    if (failed.length) {
+      showError(
+        failed.length === quotes.length
+          ? 'Could not load quotes. Check your Twelve Data API key and symbol list.'
+          : `No quote for: ${failed.join(', ')}. Other symbols updated.`
+      );
+    }
   } catch (e) {
     showError(e && e.message ? e.message : String(e));
   } finally {
@@ -7561,7 +7652,7 @@ function dashElement1QuotesInit() {
   twelveQuotesUpdateAdminUi();
   const rawList = twelveReadStoredSymbolListRaw();
   const base = rawList && rawList.length ? rawList : TWELVE_DEFAULT_SYMBOLS.slice();
-  twelveSymbols = twelveNormalizeSymbolsFromCatalog(base);
+  twelveSymbols = twelveMergeMissingDefaults(base);
   if (!rawList || JSON.stringify(rawList) !== JSON.stringify(twelveSymbols)) {
     twelveSaveSymbolsToStorage(twelveSymbols);
   }

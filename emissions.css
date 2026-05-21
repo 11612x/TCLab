@@ -75,9 +75,9 @@ box-sizing: border-box;
     cursor: pointer;
     flex: 1;
     font-family: 'Consolas', 'Courier New', monospace;
-    font-size: 13px;
-    letter-spacing: 0.06em;
-    padding: 8px 10px;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    padding: 5px 8px;
     transition: background 0.15s, color 0.15s;
 }
 
